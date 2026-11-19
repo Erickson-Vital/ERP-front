@@ -49,7 +49,26 @@
               "outputPath": {
                 "base": "dist/erp-web",
                 "browser": ""
-              }
+              },
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.prod.ts"
+                }
+              ],
+              "index": {
+                "input": "src/index.prod.html",
+                "output": "index.html"
+              },
+              "optimization": {
+                "scripts": true,
+                "styles": {
+                  "minify": true,
+                  "inlineCritical": false
+                },
+                "fonts": true
+              },
+              "sourceMap": false
             },
             "development": {
               "optimization": false,
@@ -61,7 +80,9 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
-          "options": { "proxyConfig": "proxy.conf.json" },
+          "options": {
+            "proxyConfig": "proxy.conf.json"
+          },
           "configurations": {
             "production": {
               "buildTarget": "erp-web:build:production"

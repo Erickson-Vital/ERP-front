@@ -35,10 +35,6 @@ import { mensagemErro } from '../../core/error-util';
             {{ carregando ? 'Entrando...' : 'Entrar' }}
           </button>
         </form>
-    
-        <p class="login-hint">
-          Primeiro acesso: <strong>ADMIN</strong> / <strong>ADMIN</strong>
-        </p>
       </div>
     </div>
     `,
@@ -78,7 +74,6 @@ import { mensagemErro } from '../../core/error-util';
       box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
     }
     .btn-block { width: 100%; justify-content: center; padding: 12px; margin-top: 8px; }
-    .login-hint { text-align: center; margin-top: 20px; font-size: 12px; color: #94a3b8; }
   `]
 })
 export class LoginComponent {
@@ -101,8 +96,8 @@ export class LoginComponent {
       next: (s) => {
         this.auth.salvarSessao(s);
         this.carregando = false;
-        const redirect = this.route.snapshot.queryParams['redirect'];
-        const destino = redirect && redirect !== '/login' ? redirect : this.rotaInicial(s.isAdmin, s.menus);
+        const redirect = this.redirectSeguro(this.route.snapshot.queryParams['redirect']);
+        const destino = redirect ?? this.rotaInicial(s.isAdmin, s.menus);
         this.router.navigateByUrl(destino);
       },
       error: (e) => {
@@ -110,6 +105,18 @@ export class LoginComponent {
         this.error = mensagemErro(e, 'Não foi possível entrar.');
       }
     });
+  }
+
+  /**
+   * Só aceita caminhos internos do próprio sistema (ex.: "/clientes").
+   * Bloqueia URLs externas ("https://...", "//site.com", "/\site.com") e
+   * "javascript:", para o link de login não virar ponte para phishing.
+   */
+  private redirectSeguro(valor: unknown): string | null {
+    if (typeof valor !== 'string' || valor.length > 500) return null;
+    if (!/^\/[A-Za-z0-9\-_/?=&%.]*$/.test(valor)) return null;
+    if (valor.startsWith('//') || valor.startsWith('/login')) return null;
+    return valor;
   }
 
   private rotaInicial(isAdmin: boolean, menus: string[]): string {

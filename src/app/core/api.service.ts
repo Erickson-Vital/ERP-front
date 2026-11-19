@@ -13,7 +13,7 @@ import {
   BaixaCreate, Cobranca, CobrancaCreate, Conciliacao, ConciliacaoCreate, Dashboard
 } from './models';
 
-const API = '/api';
+import { API } from './api-url';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {

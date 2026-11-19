@@ -44,3 +44,12 @@ Thumbs.db
 # Logs locais
 *.log
 web_log.txt
+
+# Gerados no build por scripts/set-env.mjs
+src/environments/environment.prod.ts
+src/index.prod.html
+
+# Variaveis locais
+.env
+.env.*
+!.env.example
