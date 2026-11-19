@@ -1,0 +1,122 @@
+<div class="card">
+  <div class="card-header">
+    <h2>{{ editando ? 'Editar Usuário' : 'Usuários e Níveis de Acesso' }}</h2>
+    <button class="btn" (click)="novo()" *ngIf="!formNovo && !editando">➕ Novo Usuário</button>
+  </div>
+
+  <div *ngIf="error" class="alert alert-error">{{ error }}</div>
+  <div *ngIf="sucesso" class="alert alert-success">{{ sucesso }}</div>
+
+  <!-- Formulário de criação/edição -->
+  <div class="panel" *ngIf="formNovo || editando">
+    <h3>{{ editando ? 'Editar: ' + editando.nome : 'Novo Usuário' }}</h3>
+
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Nome do usuário *</label>
+        <input [(ngModel)]="form.nome" placeholder="Ex.: João Lopes" />
+      </div>
+      <div class="form-group">
+        <label>Login *</label>
+        <input [(ngModel)]="form.login" placeholder="Ex.: LOPES" style="text-transform: uppercase" />
+      </div>
+      <div class="form-group" *ngIf="!editando">
+        <label>Senha *</label>
+        <input [(ngModel)]="form.senha" type="password" placeholder="Ao menos 4 caracteres" />
+      </div>
+      <div class="form-group" *ngIf="editando">
+        <label>Nova senha (opcional)</label>
+        <input [(ngModel)]="senhaAtual" type="password" placeholder="Deixe vazio para manter" />
+      </div>
+      <div class="form-group checkbox">
+        <input id="isAdmin" type="checkbox" [(ngModel)]="form.isAdmin" />
+        <label for="isAdmin">Administrador (acesso a tudo)</label>
+      </div>
+      <div class="form-group checkbox">
+        <input id="ativo" type="checkbox" [(ngModel)]="form.ativo" />
+        <label for="ativo">Usuário ativo</label>
+      </div>
+    </div>
+
+    <div *ngIf="!form.isAdmin" class="menus-block">
+      <label>Menus de acesso (marque os que este usuário pode usar)</label>
+      <div class="menus-grid">
+        <label class="menu-chip" *ngFor="let m of menusDisponiveis">
+          <input type="checkbox" [checked]="temMenu(m.codigo)" (change)="toggleMenu(m.codigo)" />
+          <span>{{ m.icon }} {{ m.label }}</span>
+        </label>
+      </div>
+    </div>
+    <div *ngIf="form.isAdmin" class="alert alert-success" style="margin-top:12px">
+      Este usuário é <strong>Administrador</strong> e terá acesso a todos os menus do sistema.
+    </div>
+
+    <div class="form-actions">
+      <button class="btn" (click)="salvar()">💾 {{ editando ? 'Atualizar' : 'Salvar' }}</button>
+      <button class="btn btn-secondary" (click)="cancelar()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h2>Lista de Usuários ({{ filtrados.length }})</h2>
+    <div class="filtros">
+      <input class="filtro-input" [(ngModel)]="filtro" (ngModelChange)="onFiltro()"
+             placeholder="🔍 Buscar por nome ou login..." />
+      <select [(ngModel)]="tamanho" (ngModelChange)="onFiltro()">
+        <option [ngValue]="10">10 / pág.</option>
+        <option [ngValue]="25">25 / pág.</option>
+        <option [ngValue]="50">50 / pág.</option>
+      </select>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="empty">Carregando...</div>
+  <div *ngIf="!loading && filtrados.length === 0" class="empty">Nenhum usuário encontrado.</div>
+
+  <table class="table" *ngIf="!loading && filtrados.length > 0">
+    <thead>
+      <tr>
+        <th>Nome</th>
+        <th>Login</th>
+        <th>Nível</th>
+        <th>Menus de Acesso</th>
+        <th>Situação</th>
+        <th>Último Acesso</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let u of paginados">
+        <td><strong>{{ u.nome }}</strong></td>
+        <td>{{ u.login }}</td>
+        <td>
+          <span class="badge" [ngClass]="u.isAdmin ? 'badge-purple' : 'badge-blue'">
+            {{ u.isAdmin ? 'ADMIN' : 'Usuário' }}
+          </span>
+        </td>
+        <td>
+          <span class="menu-tag" *ngFor="let m of u.menus">{{ menuLabel(m) }}</span>
+          <span *ngIf="!u.menus.length" class="muted">—</span>
+        </td>
+        <td>
+          <span class="badge" [ngClass]="u.ativo ? 'badge-green' : 'badge-red'">
+            {{ u.ativo ? 'Ativo' : 'Inativo' }}
+          </span>
+        </td>
+        <td>{{ u.ultimoAcesso ? (u.ultimoAcesso | date:'dd/MM/yyyy HH:mm') : '—' }}</td>
+        <td class="actions">
+          <button class="btn btn-sm btn-secondary" (click)="editar(u)">Editar</button>
+          <button class="btn btn-sm btn-danger" *ngIf="!u.isAdmin" (click)="excluir(u)">Excluir</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="paginacao" *ngIf="!loading && totalPaginas > 1">
+    <button class="btn btn-sm btn-secondary" [disabled]="pagina <= 1" (click)="irPagina(pagina - 1)">‹ Anterior</button>
+    <span>Página {{ pagina }} de {{ totalPaginas }}</span>
+    <button class="btn btn-sm btn-secondary" [disabled]="pagina >= totalPaginas" (click)="irPagina(pagina + 1)">Próxima ›</button>
+  </div>
+</div>

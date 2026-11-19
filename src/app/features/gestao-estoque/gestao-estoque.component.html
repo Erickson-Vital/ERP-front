@@ -1,0 +1,235 @@
+<div class="card">
+  <div class="card-header">
+    <h2>🏭 Gestão do Estoque</h2>
+  </div>
+  <p class="dica">
+    Cadastre aqui os <strong>locais / armazéns</strong> existentes e defina a
+    <strong>quantidade de emergência</strong> de cada material. Quando o saldo de um material
+    ficar <em>igual ou abaixo</em> da quantidade de emergência, ele é destacado na tabela
+    <strong>“Materiais em estado de emergência”</strong> abaixo.
+  </p>
+</div>
+
+<!-- ============ 1. MATERIAIS EM ESTADO DE EMERGÊNCIA (destaque) ============ -->
+<div class="card card-emergencia">
+  <div class="card-header">
+    <h2>🚨 Materiais em estado de emergência ({{ emergencias.length }})</h2>
+    <div class="filtros">
+      <select [(ngModel)]="armazemFiltro" (ngModelChange)="selecionarArmazem()">
+        <option value="">Todos os armazéns</option>
+        <option *ngFor="let a of armazens" [value]="a.id">{{ a.nome }}</option>
+      </select>
+    </div>
+  </div>
+
+  <div *ngIf="emergencias.length === 0" class="empty-empty">
+    ✅ Nenhum material em estado de emergência no momento.
+  </div>
+
+  <table class="table" *ngIf="emergencias.length > 0">
+    <thead>
+      <tr>
+        <th>Código</th>
+        <th>Material</th>
+        <th>Armazém</th>
+        <th>Saldo Atual</th>
+        <th>Qtd. Emergência</th>
+        <th>Falta para sair</th>
+        <th>% do limite</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let e of emergencias" class="linha-emergencia">
+        <td><strong>{{ e.produtoCodigo }}</strong></td>
+        <td>{{ e.produtoDescricao }}</td>
+        <td>{{ e.armazemNome || '—' }}</td>
+        <td class="qtd-atual">{{ e.quantidadeAtual | number:'1.0-4' }}</td>
+        <td>{{ e.quantidadeEmergencia | number:'1.0-4' }}</td>
+        <td><strong class="falta">{{ e.faltaParaSair | number:'1.0-4' }}</strong></td>
+        <td>
+          <span class="badge" [ngClass]="e.percentualEmergencia <= 50 ? 'badge-red' : (e.percentualEmergencia < 100 ? 'badge-orange' : 'badge-yellow')">
+            {{ e.percentualEmergencia | number:'1.0-1' }}%
+          </span>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ============ 2. CADASTRO DE ARMAZÉNS / LOCAIS ============ -->
+<div class="card">
+  <div class="card-header">
+    <h2>{{ editandoArmazem ? 'Editar Armazém/Local' : 'Novo Armazém/Local' }}</h2>
+  </div>
+
+  <div *ngIf="error" class="alert alert-error">{{ error }}</div>
+  <div *ngIf="sucesso" class="alert alert-success">{{ sucesso }}</div>
+
+  <div class="form-grid">
+    <div class="form-group">
+      <label>Nome *</label>
+      <input [(ngModel)]="formArmazem.nome" placeholder="Armazém Central, Filial SP..." />
+    </div>
+    <div class="form-group">
+      <label>Endereço</label>
+      <input [(ngModel)]="formArmazem.endereco" placeholder="Opcional" />
+    </div>
+    <div class="form-group">
+      <label>Responsável</label>
+      <input [(ngModel)]="formArmazem.responsavel" placeholder="Opcional" />
+    </div>
+    <div class="form-group">
+      <label>Ativo</label>
+      <select [(ngModel)]="formArmazem.ativo">
+        <option [ngValue]="true">Sim</option>
+        <option [ngValue]="false">Não</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="form-actions">
+    <button class="btn" (click)="salvarArmazem()">💾 {{ editandoArmazem ? 'Atualizar' : 'Salvar' }}</button>
+    <button class="btn btn-secondary" (click)="novoArmazem()">Limpar</button>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h2>Armazéns / Locais ({{ armazens.length }})</h2>
+  </div>
+
+  <div *ngIf="armazens.length === 0" class="empty">Nenhum armazém/local cadastrado.</div>
+
+  <table class="table" *ngIf="armazens.length > 0">
+    <thead>
+      <tr>
+        <th>Nome</th>
+        <th>Endereço</th>
+        <th>Responsável</th>
+        <th>Itens</th>
+        <th>Em emergência</th>
+        <th>Status</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let a of armazens" [class.linha-inativa]="!a.ativo">
+        <td><strong>{{ a.nome }}</strong></td>
+        <td>{{ a.endereco || '—' }}</td>
+        <td>{{ a.responsavel || '—' }}</td>
+        <td>{{ a.totalItens }}</td>
+        <td>
+          <span class="badge" [ngClass]="a.materiaisEmEmergencia > 0 ? 'badge-red' : 'badge-green'">
+            {{ a.materiaisEmEmergencia }}
+          </span>
+        </td>
+        <td>
+          <span class="badge" [ngClass]="a.ativo ? 'badge-green' : 'badge-gray'">
+            {{ a.ativo ? 'Ativo' : 'Inativo' }}
+          </span>
+        </td>
+        <td class="actions">
+          <button class="btn btn-sm" [ngClass]="a.ativo ? 'btn-warn' : 'btn-success'" (click)="alternarAtivoArmazem(a)">
+            {{ a.ativo ? '🚫 Desativar' : '✅ Ativar' }}
+          </button>
+          <button class="btn btn-sm btn-secondary" (click)="editarArmazem(a)">Editar</button>
+          <button class="btn btn-sm btn-danger" (click)="excluirArmazem(a)">Excluir</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ============ 3. QUANTIDADE DE EMERGÊNCIA POR MATERIAL ============ -->
+<div class="card">
+  <div class="card-header">
+    <h2>⚙️ Quantidade de emergência por material</h2>
+  </div>
+
+  <div class="linha-add">
+    <div class="campo">
+      <label>Material</label>
+      <select [(ngModel)]="produtoId">
+        <option value="">— Selecione o material —</option>
+        <option *ngFor="let p of produtosElegiveis" [value]="p.id">{{ p.codigo }} - {{ p.descricao }}</option>
+      </select>
+    </div>
+    <div class="campo">
+      <label>Armazém</label>
+      <select [(ngModel)]="armazemId">
+        <option value="">— Selecione —</option>
+        <option *ngFor="let a of armazens" [value]="a.id">{{ a.nome }}</option>
+      </select>
+    </div>
+    <div class="campo campo-qtd">
+      <label>Qtd. de emergência</label>
+      <input type="number" step="1" min="0" [(ngModel)]="quantidadeEmergencia" />
+    </div>
+    <button class="btn" (click)="definirEmergencia()">💾 Definir</button>
+  </div>
+  <p class="obs">
+    A quantidade de emergência é o saldo mínimo de segurança. Quando o saldo atual ficar
+    <strong>igual ou abaixo</strong> desse valor, o material entra em destaque na tabela de emergência.
+    Informe <strong>0</strong> para desativar o controle de emergência do material.
+  </p>
+</div>
+
+<!-- ============ 4. POSIÇÃO DE ESTOQUE (paginada) ============ -->
+<div class="card">
+  <div class="card-header">
+    <h2>📦 Posição de estoque ({{ totalPaginados }})</h2>
+    <div class="filtros">
+      <input class="filtro-input" [(ngModel)]="filtroPosicao" (ngModelChange)="onFiltroPosicao()"
+             placeholder="🔍 Buscar por código, descrição ou armazém..." />
+      <select [(ngModel)]="armazemFiltro" (ngModelChange)="selecionarArmazem()">
+        <option value="">Todos os armazéns</option>
+        <option *ngFor="let a of armazens" [value]="a.id">{{ a.nome }}</option>
+      </select>
+      <label class="chk"><input type="checkbox" [(ngModel)]="apenasEmergencia" (ngModelChange)="onFiltroPosicao()" /> Só emergência</label>
+      <label class="chk"><input type="checkbox" [(ngModel)]="apenasAtivos" (ngModelChange)="onFiltroPosicao()" /> Só ativos</label>
+      <select [(ngModel)]="tamanho" (ngModelChange)="onFiltroPosicao()">
+        <option [ngValue]="10">10 / pág.</option>
+        <option [ngValue]="25">25 / pág.</option>
+        <option [ngValue]="50">50 / pág.</option>
+        <option [ngValue]="100">100 / pág.</option>
+      </select>
+    </div>
+  </div>
+
+  <div *ngIf="posicao.length === 0" class="empty">Nenhum item de estoque encontrado.</div>
+
+  <table class="table" *ngIf="posicao.length > 0">
+    <thead>
+      <tr>
+        <th>Código</th>
+        <th>Material</th>
+        <th>Armazém</th>
+        <th>Saldo Atual</th>
+        <th>Qtd. Emergência</th>
+        <th>Qtd. Máxima</th>
+        <th>Situação</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let e of posicao" [class.linha-emergencia]="e.emEmergencia">
+        <td><strong>{{ e.produtoCodigo || '—' }}</strong></td>
+        <td>{{ e.produtoDescricao || '—' }}</td>
+        <td>{{ e.armazemNome || '—' }}</td>
+        <td [ngClass]="e.negativo ? 'qtd-neg' : ''">{{ e.quantidadeAtual | number:'1.0-4' }}</td>
+        <td>{{ e.quantidadeEmergencia | number:'1.0-4' }}</td>
+        <td>{{ e.quantidadeMaxima | number:'1.0-4' }}</td>
+        <td>
+          <span *ngIf="e.emEmergencia" class="badge badge-red">🚨 Emergência</span>
+          <span *ngIf="e.negativo" class="badge badge-red">Negativo</span>
+          <span *ngIf="!e.emEmergencia && !e.negativo" class="badge badge-green">Normal</span>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="paginacao" *ngIf="totalPaginas > 1">
+    <button class="btn btn-sm btn-secondary" [disabled]="!temAnterior" (click)="irPagina(pagina - 1)">‹ Anterior</button>
+    <span>Página {{ pagina }} de {{ totalPaginas }}</span>
+    <button class="btn btn-sm btn-secondary" [disabled]="!temProxima" (click)="irPagina(pagina + 1)">Próxima ›</button>
+  </div>
+</div>

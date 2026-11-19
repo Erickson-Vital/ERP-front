@@ -1,0 +1,110 @@
+<div class="card">
+  <div class="card-header">
+    <h2>{{ editando ? 'Editar Fornecedor' : 'Novo Fornecedor' }}</h2>
+  </div>
+
+  <div *ngIf="error" class="alert alert-error">{{ error }}</div>
+
+  <div class="form-grid">
+    <div class="form-group">
+      <label>Nome / Razão Social *</label>
+      <input [(ngModel)]="form.nome" />
+    </div>
+    <div class="form-group">
+      <label>CPF / CNPJ *</label>
+      <input [(ngModel)]="form.cpfCnpj" />
+    </div>
+    <div class="form-group">
+      <label>Código do Fornecedor</label>
+      <input [(ngModel)]="form.codigoFornecedor" placeholder="FOR001" />
+    </div>
+    <div class="form-group">
+      <label>Inscrição Estadual</label>
+      <input [(ngModel)]="form.inscricaoEstadual" />
+    </div>
+    <div class="form-group">
+      <label>E-mail</label>
+      <input [(ngModel)]="form.emailPrincipal" type="email" />
+    </div>
+    <div class="form-group">
+      <label>Telefone</label>
+      <input [(ngModel)]="form.telefonePrincipal" />
+    </div>
+    <div class="form-group">
+      <label>Prazo de Entrega Padrão</label>
+      <input [(ngModel)]="form.prazoEntregaPadrao" placeholder="Ex: 15 dias" />
+    </div>
+    <div class="form-group">
+      <label>Categoria</label>
+      <input [(ngModel)]="form.categoria" placeholder="Matéria-prima, Serviço..." />
+    </div>
+    <div class="form-group checkbox">
+      <input id="isentoIE" type="checkbox" [(ngModel)]="form.isentoIE" />
+      <label for="isentoIE">Isento de Inscrição Estadual</label>
+    </div>
+  </div>
+
+  <div class="form-actions">
+    <button class="btn" (click)="salvar()">💾 {{ editando ? 'Atualizar' : 'Salvar' }}</button>
+    <button class="btn btn-secondary" (click)="novo()">Limpar</button>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h2>Fornecedores ({{ filtrados.length }})</h2>
+    <div class="filtros">
+      <input class="filtro-input" [(ngModel)]="filtro" (ngModelChange)="onFiltro()"
+             placeholder="🔍 Buscar por nome, CPF/CNPJ, código, e-mail..." />
+      <select [(ngModel)]="tamanho" (ngModelChange)="onFiltro()">
+        <option [ngValue]="10">10 / pág.</option>
+        <option [ngValue]="25">25 / pág.</option>
+        <option [ngValue]="50">50 / pág.</option>
+        <option [ngValue]="100">100 / pág.</option>
+      </select>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="empty">Carregando...</div>
+  <div *ngIf="!loading && filtrados.length === 0" class="empty">Nenhum fornecedor encontrado.</div>
+
+  <table class="table" *ngIf="!loading && filtrados.length > 0">
+    <thead>
+      <tr>
+        <th>Nome</th>
+        <th>CPF/CNPJ</th>
+        <th>Código</th>
+        <th>E-mail</th>
+        <th>Prazo Entrega</th>
+        <th>Categoria</th>
+        <th>Status</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let f of paginados">
+        <td><strong>{{ f.nome }}</strong></td>
+        <td>{{ f.cpfCnpj }}</td>
+        <td>{{ f.codigoFornecedor }}</td>
+        <td>{{ f.emailPrincipal || '—' }}</td>
+        <td>{{ f.prazoEntregaPadrao || '—' }}</td>
+        <td>{{ f.categoria || '—' }}</td>
+        <td>
+          <span class="badge" [ngClass]="f.status === 1 ? 'badge-green' : 'badge-red'">
+            {{ f.status === 1 ? 'Ativo' : 'Inativo' }}
+          </span>
+        </td>
+        <td class="actions">
+          <button class="btn btn-sm btn-secondary" (click)="editar(f)">Editar</button>
+          <button class="btn btn-sm btn-danger" (click)="excluir(f)">Excluir</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="paginacao" *ngIf="!loading && totalPaginas > 1">
+    <button class="btn btn-sm btn-secondary" [disabled]="pagina <= 1" (click)="irPagina(pagina - 1)">‹ Anterior</button>
+    <span>Página {{ pagina }} de {{ totalPaginas }}</span>
+    <button class="btn btn-sm btn-secondary" [disabled]="pagina >= totalPaginas" (click)="irPagina(pagina + 1)">Próxima ›</button>
+  </div>
+</div>

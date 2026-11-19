@@ -1,0 +1,49 @@
+<!-- Tela de login: layout sem menu -->
+<router-outlet *ngIf="ehLogin"></router-outlet>
+
+<!-- Layout principal: apenas quando logado -->
+<div class="layout" *ngIf="!ehLogin && menu.length > 0">
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-icon">🏢</span>
+      <span class="brand-text">ERP</span>
+    </div>
+
+    <nav>
+      <ng-container *ngFor="let g of grupos">
+        <div class="nav-grupo">{{ g.nome }}</div>
+        <a *ngFor="let item of g.itens"
+           [routerLink]="item.route"
+           routerLinkActive="active"
+           class="nav-item">
+          <span class="icon">{{ item.icon }}</span>
+          <span>{{ item.label }}</span>
+        </a>
+      </ng-container>
+    </nav>
+
+    <div class="sidebar-user">
+      <div class="user-info">
+        <span class="user-avatar">{{ (usuarioNome || '?')[0] }}</span>
+        <div class="user-text">
+          <strong>{{ usuarioNome }}</strong>
+          <small>{{ usuarioLogin }}{{ isAdmin ? ' • ADMIN' : '' }}</small>
+        </div>
+      </div>
+      <button class="btn-sair" (click)="sair()" title="Sair do sistema">Sair</button>
+    </div>
+  </aside>
+
+  <main class="content">
+    <header class="topbar">
+      <h1>Sistema ERP</h1>
+      <span class="topbar-user">Olá, {{ usuarioNome }}</span>
+    </header>
+    <div class="page">
+      <router-outlet></router-outlet>
+    </div>
+  </main>
+</div>
+
+<!-- Fallback: logado mas sem menu / rota de redirecionamento -->
+<router-outlet *ngIf="!ehLogin && menu.length === 0"></router-outlet>

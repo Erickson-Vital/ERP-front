@@ -1,0 +1,59 @@
+<div class="card">
+  <div class="card-header">
+    <h2>📜 Trilha de Auditoria (Rastreabilidade)</h2>
+    <button class="btn btn-secondary btn-sm" (click)="load()">🔄 Atualizar</button>
+  </div>
+
+  <p class="hint">Todas as ações dos usuários no sistema são registradas aqui: quem fez, o quê, quando e de qual IP.</p>
+
+  <div *ngIf="error" class="alert alert-error">{{ error }}</div>
+
+  <div class="toolbar">
+    <select [(ngModel)]="filtroMenu" (ngModelChange)="onFiltroMenu()">
+      <option value="">Todos os menus</option>
+      <option *ngFor="let m of menus" [value]="m.codigo">{{ m.label }}</option>
+    </select>
+    <input [(ngModel)]="filtroTexto" (ngModelChange)="onFiltro()" placeholder="Filtrar por usuário, ação..." style="flex:1; min-width:220px" />
+    <select [(ngModel)]="tamanho" (ngModelChange)="onFiltro()">
+      <option [ngValue]="15">15 / pág.</option>
+      <option [ngValue]="30">30 / pág.</option>
+      <option [ngValue]="50">50 / pág.</option>
+    </select>
+    <span class="count">{{ filtrados.length }} registro(s)</span>
+  </div>
+
+  <div *ngIf="loading" class="empty">Carregando...</div>
+  <div *ngIf="!loading && filtrados.length === 0" class="empty">Nenhum registro encontrado.</div>
+
+  <table class="table" *ngIf="!loading && filtrados.length > 0">
+    <thead>
+      <tr>
+        <th>Data / Hora</th>
+        <th>Usuário</th>
+        <th>Ação</th>
+        <th>Menu</th>
+        <th>Detalhes</th>
+        <th>IP</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let r of paginados">
+        <td class="nowrap">{{ r.data | date:'dd/MM/yyyy HH:mm:ss' }}</td>
+        <td>
+          <strong>{{ r.usuarioNome || '—' }}</strong>
+          <small *ngIf="r.usuarioLogin" class="login">{{ r.usuarioLogin }}</small>
+        </td>
+        <td><span class="badge" [ngClass]="acaoClass(r.acao)">{{ r.acao }}</span></td>
+        <td>{{ menuLabel(r.menu) }}</td>
+        <td class="detalhes">{{ r.detalhes || '—' }}</td>
+        <td class="ip">{{ r.ip || '—' }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="paginacao" *ngIf="!loading && totalPaginas > 1">
+    <button class="btn btn-sm btn-secondary" [disabled]="pagina <= 1" (click)="irPagina(pagina - 1)">‹ Anterior</button>
+    <span>Página {{ pagina }} de {{ totalPaginas }}</span>
+    <button class="btn btn-sm btn-secondary" [disabled]="pagina >= totalPaginas" (click)="irPagina(pagina + 1)">Próxima ›</button>
+  </div>
+</div>

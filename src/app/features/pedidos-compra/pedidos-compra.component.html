@@ -1,0 +1,117 @@
+<div class="card">
+  <div class="card-header">
+    <h2>Pedidos de Compra</h2>
+    <button class="btn" (click)="novo()">➕ Novo Pedido</button>
+  </div>
+
+  <div *ngIf="error" class="alert alert-error">{{ error }}</div>
+  <div *ngIf="sucesso" class="alert alert-success">{{ sucesso }}</div>
+
+  <div *ngIf="painel" class="panel">
+    <h3>Novo Pedido de Compra</h3>
+    <div class="form-group">
+      <label>Fornecedor *</label>
+      <select [(ngModel)]="fornecedorId">
+        <option value="">— Selecione —</option>
+        <option *ngFor="let f of fornecedores" [value]="f.id">{{ f.nome }}</option>
+      </select>
+    </div>
+
+    <h4>Itens</h4>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Produto</th>
+          <th>Qtd</th>
+          <th>Preço Unit.</th>
+          <th>Desconto</th>
+          <th>Subtotal</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of itens; let i = index">
+          <td>
+            <select [(ngModel)]="item.produtoId" (change)="onProdutoChange(item)">
+              <option value="">— Selecione —</option>
+              <option *ngFor="let p of produtos" [value]="p.id">{{ p.codigo }} - {{ p.descricao }}</option>
+            </select>
+          </td>
+          <td><input type="number" step="0.01" [(ngModel)]="item.quantidade" style="width:90px" /></td>
+          <td><input type="number" step="0.01" [(ngModel)]="item.precoUnitario" style="width:110px" /></td>
+          <td><input type="number" step="0.01" [(ngModel)]="item.desconto" style="width:90px" /></td>
+          <td>{{ subtotal(item) | currency:'BRL' }}</td>
+          <td><button class="btn btn-sm btn-danger" (click)="removerItem(i)">✕</button></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="form-actions">
+      <button class="btn btn-secondary btn-sm" (click)="adicionarItem()">➕ Adicionar Item</button>
+      <strong class="total">Total: {{ total() | currency:'BRL' }}</strong>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn" (click)="salvar()">💾 Salvar Pedido</button>
+      <button class="btn btn-secondary" (click)="painel = false">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h2>Lista de Pedidos ({{ filtrados.length }})</h2>
+    <div class="filtros">
+      <input class="filtro-input" [(ngModel)]="filtro" (ngModelChange)="onFiltro()"
+             placeholder="🔍 Buscar por número ou fornecedor..." />
+      <select [(ngModel)]="filtroStatus" (ngModelChange)="onFiltro()">
+        <option [ngValue]="0">Todos os status</option>
+        <option [ngValue]="1">Rascunho</option>
+        <option [ngValue]="2">Aberto</option>
+        <option [ngValue]="4">Recebido</option>
+        <option [ngValue]="5">Cancelado</option>
+      </select>
+      <select [(ngModel)]="tamanho" (ngModelChange)="onFiltro()">
+        <option [ngValue]="10">10 / pág.</option>
+        <option [ngValue]="25">25 / pág.</option>
+        <option [ngValue]="50">50 / pág.</option>
+        <option [ngValue]="100">100 / pág.</option>
+      </select>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="empty">Carregando...</div>
+  <div *ngIf="!loading && filtrados.length === 0" class="empty">Nenhum pedido encontrado.</div>
+
+  <table class="table" *ngIf="!loading && filtrados.length > 0">
+    <thead>
+      <tr>
+        <th>Número</th>
+        <th>Fornecedor</th>
+        <th>Data</th>
+        <th>Total</th>
+        <th>Status</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let p of paginados">
+        <td><strong>{{ p.numero }}</strong></td>
+        <td>{{ p.fornecedorNome || '—' }}</td>
+        <td>{{ p.dataEmissao | date:'dd/MM/yyyy HH:mm' }}</td>
+        <td>{{ p.totalLiquido | currency:'BRL' }}</td>
+        <td><span class="badge" [ngClass]="statusClass(p.status)">{{ statusLabel(p.status) }}</span></td>
+        <td class="actions">
+          <button class="btn btn-sm btn-success" *ngIf="p.status !== 4 && p.status !== 5" (click)="receber(p)">Receber</button>
+          <button class="btn btn-sm btn-danger" *ngIf="p.status !== 4 && p.status !== 5" (click)="cancelar(p)">Cancelar</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="paginacao" *ngIf="!loading && totalPaginas > 1">
+    <button class="btn btn-sm btn-secondary" [disabled]="pagina <= 1" (click)="irPagina(pagina - 1)">‹ Anterior</button>
+    <span>Página {{ pagina }} de {{ totalPaginas }}</span>
+    <button class="btn btn-sm btn-secondary" [disabled]="pagina >= totalPaginas" (click)="irPagina(pagina + 1)">Próxima ›</button>
+  </div>
+</div>

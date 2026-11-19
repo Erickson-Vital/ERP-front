@@ -1,0 +1,95 @@
+.fin-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.tab {
+  padding: 10px 18px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  font-family: inherit;
+  color: #475569;
+  font-weight: 500;
+  transition: all 0.15s;
+}
+.tab:hover { border-color: #2563eb; color: #2563eb; }
+.tab.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+
+.totais {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.tot {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 12px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-left: 3px solid #2563eb;
+  min-width: 160px;
+}
+.tot span { font-size: 12px; color: #64748b; }
+.tot strong { font-size: 18px; color: #1e293b; }
+
+.sub { display: block; font-size: 11px; color: #94a3b8; margin-top: 2px; }
+.vencido { color: #dc2626 !important; font-weight: 600; }
+.pos { color: #16a34a; }
+.neg { color: #dc2626; }
+.mono { font-family: monospace; font-size: 12px; color: #475569; }
+
+.panel {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 18px;
+  margin-bottom: 18px;
+}
+.panel h3 { margin-top: 0; font-size: 16px; }
+
+.hint { color: #64748b; font-size: 12px; }
+
+.cob-box label { font-size: 12px; color: #64748b; font-weight: 500; }
+.codigo {
+  font-family: monospace;
+  background: #f1f5f9;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 4px;
+  word-break: break-all;
+  cursor: pointer;
+  font-size: 13px;
+}
+.codigo:hover { background: #e2e8f0; }
+
+/* Modal */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+.modal {
+  background: #fff;
+  border-radius: 14px;
+  padding: 26px;
+  width: 100%;
+  max-width: 640px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+.modal h3 { margin-top: 0; }
+.modal-desc { color: #475569; font-size: 14px; margin-top: -6px; }
