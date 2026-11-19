@@ -6,10 +6,9 @@ import { mensagemErro } from '../../core/error-util';
 import { Processo, ProcessoCreate } from '../../core/models';
 
 @Component({
-  selector: 'app-processos',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
+    selector: 'app-processos',
+    imports: [CommonModule, FormsModule],
+    template: `
     <div class="card">
       <div class="card-header">
         <h2>{{ editando ? 'Editar Processo' : 'Novo Processo' }}</h2>
@@ -90,7 +89,7 @@ import { Processo, ProcessoCreate } from '../../core/models';
       </table>
     </div>
   `,
-  styles: [`
+    styles: [`
     .dica { margin-top: 1rem; font-size: .85rem; color: #5b6b7c; background:#f3f6fa;
             border-left:3px solid #6b8cae; padding:.6rem .8rem; border-radius:6px; }
     .total-geral { font-size: .85rem; color:#4a5a6a; }

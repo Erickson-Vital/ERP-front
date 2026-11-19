@@ -6,11 +6,10 @@ import { Fornecedor, FornecedorCreate } from '../../core/models';
 import { filtrarPor, paginar, totalPaginas } from '../../core/paginacao';
 
 @Component({
-  selector: 'app-fornecedores',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './fornecedores.component.html',
-  styleUrl: './fornecedores.component.css'
+    selector: 'app-fornecedores',
+    imports: [CommonModule, FormsModule],
+    templateUrl: './fornecedores.component.html',
+    styleUrl: './fornecedores.component.css'
 })
 export class FornecedoresComponent implements OnInit {
   fornecedores: Fornecedor[] = [];

@@ -8,11 +8,10 @@ import { MENUS, MenuItem, menuPorCodigo } from '../../core/menus';
 import { filtrarPor, paginar, totalPaginas } from '../../core/paginacao';
 
 @Component({
-  selector: 'app-usuarios',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './usuarios.component.html',
-  styleUrl: './usuarios.component.css'
+    selector: 'app-usuarios',
+    imports: [CommonModule, FormsModule],
+    templateUrl: './usuarios.component.html',
+    styleUrl: './usuarios.component.css'
 })
 export class UsuariosComponent implements OnInit {
   usuarios: Usuario[] = [];

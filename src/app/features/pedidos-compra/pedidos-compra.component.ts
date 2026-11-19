@@ -6,11 +6,10 @@ import { PedidoCompra, ItemPedido, Produto, Fornecedor } from '../../core/models
 import { filtrarPor, paginar, totalPaginas } from '../../core/paginacao';
 
 @Component({
-  selector: 'app-pedidos-compra',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './pedidos-compra.component.html',
-  styleUrl: './pedidos-compra.component.css'
+    selector: 'app-pedidos-compra',
+    imports: [CommonModule, FormsModule],
+    templateUrl: './pedidos-compra.component.html',
+    styleUrl: './pedidos-compra.component.css'
 })
 export class PedidosCompraComponent implements OnInit {
   pedidos: PedidoCompra[] = [];

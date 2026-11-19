@@ -7,11 +7,10 @@ import { PedidoVenda, ItemPedido, Produto, Cliente, EstoqueProduto, VerificacaoE
 import { filtrarPor, paginar, totalPaginas } from '../../core/paginacao';
 
 @Component({
-  selector: 'app-pedidos-venda',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './pedidos-venda.component.html',
-  styleUrl: './pedidos-venda.component.css'
+    selector: 'app-pedidos-venda',
+    imports: [CommonModule, FormsModule],
+    templateUrl: './pedidos-venda.component.html',
+    styleUrl: './pedidos-venda.component.css'
 })
 export class PedidosVendaComponent implements OnInit {
   pedidos: PedidoVenda[] = [];

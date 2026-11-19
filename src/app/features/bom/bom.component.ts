@@ -6,11 +6,10 @@ import { mensagemErro } from '../../core/error-util';
 import { BomResumo, KitOpcao, ComposicaoKit, Produto, Processo } from '../../core/models';
 
 @Component({
-  selector: 'app-bom',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './bom.component.html',
-  styleUrl: './bom.component.css'
+    selector: 'app-bom',
+    imports: [CommonModule, FormsModule],
+    templateUrl: './bom.component.html',
+    styleUrl: './bom.component.css'
 })
 export class BomComponent implements OnInit {
   bom: BomResumo[] = [];

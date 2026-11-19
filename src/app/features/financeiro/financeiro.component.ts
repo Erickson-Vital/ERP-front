@@ -12,11 +12,10 @@ import { filtrarPor, paginar, totalPaginas } from '../../core/paginacao';
 type Aba = 'receber' | 'pagar' | 'bancos' | 'cobrancas' | 'conciliacao';
 
 @Component({
-  selector: 'app-financeiro',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './financeiro.component.html',
-  styleUrl: './financeiro.component.css'
+    selector: 'app-financeiro',
+    imports: [CommonModule, FormsModule],
+    templateUrl: './financeiro.component.html',
+    styleUrl: './financeiro.component.css'
 })
 export class FinanceiroComponent implements OnInit {
   aba: Aba = 'receber';

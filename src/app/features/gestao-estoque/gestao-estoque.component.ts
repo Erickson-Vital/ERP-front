@@ -6,11 +6,10 @@ import { mensagemErro } from '../../core/error-util';
 import { Armazem, ArmazemCreate, EstoqueProduto, EstoqueEmergencia, Produto } from '../../core/models';
 
 @Component({
-  selector: 'app-gestao-estoque',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './gestao-estoque.component.html',
-  styleUrl: './gestao-estoque.component.css'
+    selector: 'app-gestao-estoque',
+    imports: [CommonModule, FormsModule],
+    templateUrl: './gestao-estoque.component.html',
+    styleUrl: './gestao-estoque.component.css'
 })
 export class GestaoEstoqueComponent implements OnInit {
   armazens: Armazem[] = [];

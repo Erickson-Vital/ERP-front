@@ -6,11 +6,10 @@ import { Cliente, ClienteCreate } from '../../core/models';
 import { filtrarPor, paginar, totalPaginas } from '../../core/paginacao';
 
 @Component({
-  selector: 'app-clientes',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './clientes.component.html',
-  styleUrl: './clientes.component.css'
+    selector: 'app-clientes',
+    imports: [CommonModule, FormsModule],
+    templateUrl: './clientes.component.html',
+    styleUrl: './clientes.component.css'
 })
 export class ClientesComponent implements OnInit {
   clientes: Cliente[] = [];

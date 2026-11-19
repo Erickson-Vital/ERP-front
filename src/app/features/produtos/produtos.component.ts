@@ -6,11 +6,10 @@ import { mensagemErro } from '../../core/error-util';
 import { Produto, ProdutoCreate, UnidadeMedida, FamiliaProduto } from '../../core/models';
 
 @Component({
-  selector: 'app-produtos',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './produtos.component.html',
-  styleUrl: './produtos.component.css'
+    selector: 'app-produtos',
+    imports: [CommonModule, FormsModule],
+    templateUrl: './produtos.component.html',
+    styleUrl: './produtos.component.css'
 })
 export class ProdutosComponent implements OnInit {
   produtos: Produto[] = [];

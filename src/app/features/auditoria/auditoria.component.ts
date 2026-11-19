@@ -8,11 +8,10 @@ import { MENUS, menuPorCodigo } from '../../core/menus';
 import { paginar, totalPaginas } from '../../core/paginacao';
 
 @Component({
-  selector: 'app-auditoria',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './auditoria.component.html',
-  styleUrl: './auditoria.component.css'
+    selector: 'app-auditoria',
+    imports: [CommonModule, FormsModule],
+    templateUrl: './auditoria.component.html',
+    styleUrl: './auditoria.component.css'
 })
 export class AuditoriaComponent implements OnInit {
   registros: Auditoria[] = [];

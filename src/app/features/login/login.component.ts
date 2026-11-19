@@ -7,10 +7,9 @@ import { AuthService } from '../../core/auth.service';
 import { mensagemErro } from '../../core/error-util';
 
 @Component({
-  selector: 'app-login',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
+    selector: 'app-login',
+    imports: [CommonModule, FormsModule],
+    template: `
     <div class="login-wrap">
       <div class="login-card">
         <div class="login-brand">
@@ -41,7 +40,7 @@ import { mensagemErro } from '../../core/error-util';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .login-wrap {
       min-height: 100vh;
       display: flex;

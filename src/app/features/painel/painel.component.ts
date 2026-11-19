@@ -5,10 +5,9 @@ import { ApiService } from '../../core/api.service';
 import { Dashboard } from '../../core/models';
 
 @Component({
-  selector: 'app-painel',
-  standalone: true,
-  imports: [CommonModule, RouterLink],
-  template: `
+    selector: 'app-painel',
+    imports: [CommonModule, RouterLink],
+    template: `
     <div *ngIf="error" class="alert alert-error">{{ error }}</div>
 
     <div *ngIf="loading" class="empty">Carregando indicadores...</div>
@@ -174,7 +173,7 @@ import { Dashboard } from '../../core/models';
       </div>
     </ng-container>
   `,
-  styles: [`
+    styles: [`
     .kpi-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));

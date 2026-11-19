@@ -7,11 +7,10 @@ import { EstoqueProduto, MovimentacaoCreate, Produto, Armazem, MovimentacaoEstoq
 import { filtrarPor, paginar, totalPaginas } from '../../core/paginacao';
 
 @Component({
-  selector: 'app-estoque',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './estoque.component.html',
-  styleUrl: './estoque.component.css'
+    selector: 'app-estoque',
+    imports: [CommonModule, FormsModule],
+    templateUrl: './estoque.component.html',
+    styleUrl: './estoque.component.css'
 })
 export class EstoqueComponent implements OnInit {
   estoques: EstoqueProduto[] = [];
