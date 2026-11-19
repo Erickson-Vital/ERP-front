@@ -47,7 +47,7 @@
               ],
               "outputHashing": "all",
               "outputPath": {
-                "base": "../Erp.Api/wwwroot",
+                "base": "dist/erp-web",
                 "browser": ""
               }
             },
