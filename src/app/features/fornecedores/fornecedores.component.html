@@ -3,7 +3,9 @@
     <h2>{{ editando ? 'Editar Fornecedor' : 'Novo Fornecedor' }}</h2>
   </div>
 
-  <div *ngIf="error" class="alert alert-error">{{ error }}</div>
+  @if (error) {
+    <div class="alert alert-error">{{ error }}</div>
+  }
 
   <div class="form-grid">
     <div class="form-group">
@@ -55,56 +57,66 @@
     <h2>Fornecedores ({{ filtrados.length }})</h2>
     <div class="filtros">
       <input class="filtro-input" [(ngModel)]="filtro" (ngModelChange)="onFiltro()"
-             placeholder="🔍 Buscar por nome, CPF/CNPJ, código, e-mail..." />
-      <select [(ngModel)]="tamanho" (ngModelChange)="onFiltro()">
-        <option [ngValue]="10">10 / pág.</option>
-        <option [ngValue]="25">25 / pág.</option>
-        <option [ngValue]="50">50 / pág.</option>
-        <option [ngValue]="100">100 / pág.</option>
-      </select>
+        placeholder="🔍 Buscar por nome, CPF/CNPJ, código, e-mail..." />
+        <select [(ngModel)]="tamanho" (ngModelChange)="onFiltro()">
+          <option [ngValue]="10">10 / pág.</option>
+          <option [ngValue]="25">25 / pág.</option>
+          <option [ngValue]="50">50 / pág.</option>
+          <option [ngValue]="100">100 / pág.</option>
+        </select>
+      </div>
     </div>
+
+    @if (loading) {
+      <div class="empty">Carregando...</div>
+    }
+    @if (!loading && filtrados.length === 0) {
+      <div class="empty">Nenhum fornecedor encontrado.</div>
+    }
+
+    @if (!loading && filtrados.length > 0) {
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>CPF/CNPJ</th>
+            <th>Código</th>
+            <th>E-mail</th>
+            <th>Prazo Entrega</th>
+            <th>Categoria</th>
+            <th>Status</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (f of paginados; track f) {
+            <tr>
+              <td><strong>{{ f.nome }}</strong></td>
+              <td>{{ f.cpfCnpj }}</td>
+              <td>{{ f.codigoFornecedor }}</td>
+              <td>{{ f.emailPrincipal || '—' }}</td>
+              <td>{{ f.prazoEntregaPadrao || '—' }}</td>
+              <td>{{ f.categoria || '—' }}</td>
+              <td>
+                <span class="badge" [ngClass]="f.status === 1 ? 'badge-green' : 'badge-red'">
+                  {{ f.status === 1 ? 'Ativo' : 'Inativo' }}
+                </span>
+              </td>
+              <td class="actions">
+                <button class="btn btn-sm btn-secondary" (click)="editar(f)">Editar</button>
+                <button class="btn btn-sm btn-danger" (click)="excluir(f)">Excluir</button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+
+    @if (!loading && totalPaginas > 1) {
+      <div class="paginacao">
+        <button class="btn btn-sm btn-secondary" [disabled]="pagina <= 1" (click)="irPagina(pagina - 1)">‹ Anterior</button>
+        <span>Página {{ pagina }} de {{ totalPaginas }}</span>
+        <button class="btn btn-sm btn-secondary" [disabled]="pagina >= totalPaginas" (click)="irPagina(pagina + 1)">Próxima ›</button>
+      </div>
+    }
   </div>
-
-  <div *ngIf="loading" class="empty">Carregando...</div>
-  <div *ngIf="!loading && filtrados.length === 0" class="empty">Nenhum fornecedor encontrado.</div>
-
-  <table class="table" *ngIf="!loading && filtrados.length > 0">
-    <thead>
-      <tr>
-        <th>Nome</th>
-        <th>CPF/CNPJ</th>
-        <th>Código</th>
-        <th>E-mail</th>
-        <th>Prazo Entrega</th>
-        <th>Categoria</th>
-        <th>Status</th>
-        <th>Ações</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let f of paginados">
-        <td><strong>{{ f.nome }}</strong></td>
-        <td>{{ f.cpfCnpj }}</td>
-        <td>{{ f.codigoFornecedor }}</td>
-        <td>{{ f.emailPrincipal || '—' }}</td>
-        <td>{{ f.prazoEntregaPadrao || '—' }}</td>
-        <td>{{ f.categoria || '—' }}</td>
-        <td>
-          <span class="badge" [ngClass]="f.status === 1 ? 'badge-green' : 'badge-red'">
-            {{ f.status === 1 ? 'Ativo' : 'Inativo' }}
-          </span>
-        </td>
-        <td class="actions">
-          <button class="btn btn-sm btn-secondary" (click)="editar(f)">Editar</button>
-          <button class="btn btn-sm btn-danger" (click)="excluir(f)">Excluir</button>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-
-  <div class="paginacao" *ngIf="!loading && totalPaginas > 1">
-    <button class="btn btn-sm btn-secondary" [disabled]="pagina <= 1" (click)="irPagina(pagina - 1)">‹ Anterior</button>
-    <span>Página {{ pagina }} de {{ totalPaginas }}</span>
-    <button class="btn btn-sm btn-secondary" [disabled]="pagina >= totalPaginas" (click)="irPagina(pagina + 1)">Próxima ›</button>
-  </div>
-</div>

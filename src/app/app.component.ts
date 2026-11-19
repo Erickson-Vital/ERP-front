@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
-import { CommonModule } from '@angular/common';
+
 import { AuthService } from './core/auth.service';
 import { ApiService } from './core/api.service';
 import { MENUS, MenuItem } from './core/menus';
@@ -8,7 +8,7 @@ import { filter } from 'rxjs/operators';
 
 @Component({
     selector: 'app-root',
-    imports: [RouterOutlet, RouterLink, RouterLinkActive, CommonModule],
+    imports: [RouterOutlet, RouterLink, RouterLinkActive],
     templateUrl: './app.component.html',
     styleUrl: './app.component.css'
 })

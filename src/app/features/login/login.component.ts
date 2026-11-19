@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../core/api.service';
@@ -8,7 +8,7 @@ import { mensagemErro } from '../../core/error-util';
 
 @Component({
     selector: 'app-login',
-    imports: [CommonModule, FormsModule],
+    imports: [FormsModule],
     template: `
     <div class="login-wrap">
       <div class="login-card">
@@ -17,9 +17,11 @@ import { mensagemErro } from '../../core/error-util';
           <h1>ERP</h1>
           <p>Sistema de Gestão</p>
         </div>
-
-        <div *ngIf="error" class="alert alert-error">{{ error }}</div>
-
+    
+        @if (error) {
+          <div class="alert alert-error">{{ error }}</div>
+        }
+    
         <form (ngSubmit)="entrar()">
           <div class="form-group">
             <label>Login</label>
@@ -33,13 +35,13 @@ import { mensagemErro } from '../../core/error-util';
             {{ carregando ? 'Entrando...' : 'Entrar' }}
           </button>
         </form>
-
+    
         <p class="login-hint">
           Primeiro acesso: <strong>ADMIN</strong> / <strong>ADMIN</strong>
         </p>
       </div>
     </div>
-  `,
+    `,
     styles: [`
     .login-wrap {
       min-height: 100vh;

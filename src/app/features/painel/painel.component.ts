@@ -8,11 +8,15 @@ import { Dashboard } from '../../core/models';
     selector: 'app-painel',
     imports: [CommonModule, RouterLink],
     template: `
-    <div *ngIf="error" class="alert alert-error">{{ error }}</div>
-
-    <div *ngIf="loading" class="empty">Carregando indicadores...</div>
-
-    <ng-container *ngIf="!loading && d">
+    @if (error) {
+      <div class="alert alert-error">{{ error }}</div>
+    }
+    
+    @if (loading) {
+      <div class="empty">Carregando indicadores...</div>
+    }
+    
+    @if (!loading && d) {
       <!-- Cartões principais -->
       <div class="kpi-grid">
         <div class="kpi kpi-blue">
@@ -44,7 +48,6 @@ import { Dashboard } from '../../core/models';
           </div>
         </div>
       </div>
-
       <div class="kpi-grid">
         <div class="kpi kpi-green">
           <span class="kpi-icon">🧾</span>
@@ -75,7 +78,6 @@ import { Dashboard } from '../../core/models';
           </div>
         </div>
       </div>
-
       <!-- Painéis de detalhe -->
       <div class="painel-grid">
         <!-- Vendas -->
@@ -86,17 +88,20 @@ import { Dashboard } from '../../core/models';
             <div><span class="ml">Em aberto</span><strong>{{ d.vendas.pedidosAbertos }}</strong></div>
             <div><span class="ml">Faturados</span><strong>{{ d.vendas.pedidosFaturados }}</strong></div>
           </div>
-          <div class="chart" *ngIf="d.vendasPorMes.length">
-            <div class="chart-row" *ngFor="let s of d.vendasPorMes">
-              <span class="chart-label">{{ s.mes }}</span>
-              <div class="chart-track">
-                <div class="chart-bar bar-venda" [style.width.%]="largura(s.valor, maxVenda())"></div>
-              </div>
-              <span class="chart-valor">{{ s.valor | currency:'BRL' }}</span>
+          @if (d.vendasPorMes.length) {
+            <div class="chart">
+              @for (s of d.vendasPorMes; track s) {
+                <div class="chart-row">
+                  <span class="chart-label">{{ s.mes }}</span>
+                  <div class="chart-track">
+                    <div class="chart-bar bar-venda" [style.width.%]="largura(s.valor, maxVenda())"></div>
+                  </div>
+                  <span class="chart-valor">{{ s.valor | currency:'BRL' }}</span>
+                </div>
+              }
             </div>
-          </div>
+          }
         </div>
-
         <!-- Estoque -->
         <div class="card">
           <div class="card-header"><h2>🏬 Estoque</h2></div>
@@ -105,25 +110,31 @@ import { Dashboard } from '../../core/models';
             <div><span class="ml">Movimentações hoje</span><strong>{{ d.estoque.movimentacoesHoje }}</strong></div>
             <div><span class="ml">Abaixo do mínimo</span><strong>{{ d.estoque.itensAbaixoMinimo }}</strong></div>
           </div>
-
-          <h4 *ngIf="d.produtosAbaixoMinimo.length">Produtos abaixo do mínimo</h4>
-          <table class="table" *ngIf="d.produtosAbaixoMinimo.length">
-            <thead>
-              <tr><th>Produto</th><th>Armazém</th><th>Atual</th><th>Mín.</th></tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let p of d.produtosAbaixoMinimo">
-                <td>{{ p.produtoDescricao || '—' }}</td>
-                <td>{{ p.armazemNome || '—' }}</td>
-                <td class="num-red">{{ p.quantidadeAtual | number:'1.0-2' }}</td>
-                <td>{{ p.quantidadeMinima | number:'1.0-2' }}</td>
-              </tr>
-            </tbody>
-          </table>
-          <div class="empty" *ngIf="!d.produtosAbaixoMinimo.length">Todos os produtos acima do mínimo. 👍</div>
+          @if (d.produtosAbaixoMinimo.length) {
+            <h4>Produtos abaixo do mínimo</h4>
+          }
+          @if (d.produtosAbaixoMinimo.length) {
+            <table class="table">
+              <thead>
+                <tr><th>Produto</th><th>Armazém</th><th>Atual</th><th>Mín.</th></tr>
+              </thead>
+              <tbody>
+                @for (p of d.produtosAbaixoMinimo; track p) {
+                  <tr>
+                    <td>{{ p.produtoDescricao || '—' }}</td>
+                    <td>{{ p.armazemNome || '—' }}</td>
+                    <td class="num-red">{{ p.quantidadeAtual | number:'1.0-2' }}</td>
+                    <td>{{ p.quantidadeMinima | number:'1.0-2' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+          @if (!d.produtosAbaixoMinimo.length) {
+            <div class="empty">Todos os produtos acima do mínimo. 👍</div>
+          }
         </div>
       </div>
-
       <div class="painel-grid">
         <!-- Financeiro -->
         <div class="card">
@@ -134,45 +145,53 @@ import { Dashboard } from '../../core/models';
             <div><span class="ml">A receber vencido</span><strong class="num-red">{{ d.financeiro.aReceberVencido | currency:'BRL' }}</strong></div>
             <div><span class="ml">A pagar vencido</span><strong class="num-red">{{ d.financeiro.aPagarVencido | currency:'BRL' }}</strong></div>
           </div>
-
-          <div class="chart" *ngIf="d.comprasPorMes.length">
-            <div class="chart-row" *ngFor="let s of d.comprasPorMes">
-              <span class="chart-label">{{ s.mes }}</span>
-              <div class="chart-track">
-                <div class="chart-bar bar-compra" [style.width.%]="largura(s.valor, maxCompra())"></div>
-              </div>
-              <span class="chart-valor">{{ s.valor | currency:'BRL' }}</span>
+          @if (d.comprasPorMes.length) {
+            <div class="chart">
+              @for (s of d.comprasPorMes; track s) {
+                <div class="chart-row">
+                  <span class="chart-label">{{ s.mes }}</span>
+                  <div class="chart-track">
+                    <div class="chart-bar bar-compra" [style.width.%]="largura(s.valor, maxCompra())"></div>
+                  </div>
+                  <span class="chart-valor">{{ s.valor | currency:'BRL' }}</span>
+                </div>
+              }
             </div>
-          </div>
+          }
         </div>
-
         <!-- Próximos vencimentos -->
         <div class="card">
           <div class="card-header"><h2>⏰ Próximos Vencimentos</h2></div>
-          <div class="empty" *ngIf="!d.proximosVencimentos.length">Nenhum título nos próximos 15 dias.</div>
-          <table class="table" *ngIf="d.proximosVencimentos.length">
-            <thead>
-              <tr><th>Descrição</th><th>Tipo</th><th>Vencimento</th><th>Valor</th></tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let c of d.proximosVencimentos">
-                <td>{{ c.descricao }}</td>
-                <td>
-                  <span class="badge" [ngClass]="c.tipo === 2 ? 'badge-blue' : 'badge-orange'">
-                    {{ c.tipo === 2 ? 'Receber' : 'Pagar' }}
-                  </span>
-                </td>
-                <td>
-                  <span [ngClass]="c.vencida ? 'num-red' : ''">{{ c.vencimento | date:'dd/MM/yyyy' }}</span>
-                </td>
-                <td>{{ c.valorAberto | currency:'BRL' }}</td>
-              </tr>
-            </tbody>
-          </table>
+          @if (!d.proximosVencimentos.length) {
+            <div class="empty">Nenhum título nos próximos 15 dias.</div>
+          }
+          @if (d.proximosVencimentos.length) {
+            <table class="table">
+              <thead>
+                <tr><th>Descrição</th><th>Tipo</th><th>Vencimento</th><th>Valor</th></tr>
+              </thead>
+              <tbody>
+                @for (c of d.proximosVencimentos; track c) {
+                  <tr>
+                    <td>{{ c.descricao }}</td>
+                    <td>
+                      <span class="badge" [ngClass]="c.tipo === 2 ? 'badge-blue' : 'badge-orange'">
+                        {{ c.tipo === 2 ? 'Receber' : 'Pagar' }}
+                      </span>
+                    </td>
+                    <td>
+                      <span [ngClass]="c.vencida ? 'num-red' : ''">{{ c.vencimento | date:'dd/MM/yyyy' }}</span>
+                    </td>
+                    <td>{{ c.valorAberto | currency:'BRL' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
         </div>
       </div>
-    </ng-container>
-  `,
+    }
+    `,
     styles: [`
     .kpi-grid {
       display: grid;

@@ -10,15 +10,21 @@
     Para criar um novo kit, cadastre um produto do tipo <strong>Kit</strong> no menu <strong>Produtos</strong>.
   </p>
 
-  <div *ngIf="error" class="alert alert-error">{{ error }}</div>
+  @if (error) {
+    <div class="alert alert-error">{{ error }}</div>
+  }
 
   <div class="seletor-kit">
     <label>Selecione o kit:</label>
     <select [(ngModel)]="kitSelecionadoId" (ngModelChange)="selecionarKit()">
       <option value="">— Selecione um kit —</option>
-      <option *ngFor="let k of kits" [value]="k.id">{{ k.codigo }} - {{ k.descricao }}</option>
+      @for (k of kits; track k) {
+        <option [value]="k.id">{{ k.codigo }} - {{ k.descricao }}</option>
+      }
     </select>
-    <span *ngIf="kits.length === 0" class="aviso">Nenhum kit cadastrado ainda.</span>
+    @if (kits.length === 0) {
+      <span class="aviso">Nenhum kit cadastrado ainda.</span>
+    }
   </div>
 </div>
 
@@ -27,193 +33,218 @@
     <h2>Kits ({{ bom.length }})</h2>
   </div>
 
-  <div *ngIf="loading" class="empty">Carregando...</div>
-  <div *ngIf="!loading && bom.length === 0" class="empty">Nenhum kit cadastrado.</div>
+  @if (loading) {
+    <div class="empty">Carregando...</div>
+  }
+  @if (!loading && bom.length === 0) {
+    <div class="empty">Nenhum kit cadastrado.</div>
+  }
 
-  <table class="table" *ngIf="!loading && bom.length > 0">
-    <thead>
-      <tr>
-        <th>Código</th>
-        <th>Descrição</th>
-        <th>Componentes</th>
-        <th>Processos</th>
-        <th>Custo Materiais</th>
-        <th>Custo Processos</th>
-        <th>Custo Total</th>
-        <th>Preço Venda</th>
-        <th>Margem</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let b of bom">
-        <td><strong>{{ b.codigo }}</strong></td>
-        <td>{{ b.descricao }}</td>
-        <td>{{ b.qtdComponentes }}</td>
-        <td>{{ b.qtdProcessos }}</td>
-        <td>{{ b.custoMateriais | currency:'BRL' }}</td>
-        <td>{{ b.custoProcessos | currency:'BRL' }}</td>
-        <td><strong>{{ b.custoTotal | currency:'BRL' }}</strong></td>
-        <td>{{ b.precoVenda | currency:'BRL' }}</td>
-        <td>
-          <span *ngIf="b.margemPercentual !== null && b.margemPercentual !== undefined"
-                [ngClass]="(b.margemPercentual || 0) >= 0 ? 'margem-ok' : 'margem-ruim'">
-            {{ b.margemPercentual | number:'1.0-2' }}%
-          </span>
-          <span *ngIf="b.margemPercentual === null || b.margemPercentual === undefined">—</span>
-        </td>
-        <td class="actions">
-          <button class="btn btn-sm btn-purple" (click)="kitSelecionadoId = b.produtoId; selecionarKit()">
-            ✏️ Editar estrutura
-          </button>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-</div>
-
-<!-- ================= EDITOR DA ESTRUTURA ================= -->
-<div class="card card-composicao" *ngIf="kitAtual">
-  <div class="card-header">
-    <h2>Estrutura do Kit — {{ kitAtual.descricao }}</h2>
-  </div>
-
-  <div *ngIf="erroComposicao" class="alert alert-error">{{ erroComposicao }}</div>
-  <div *ngIf="sucessoComposicao" class="alert alert-success">{{ sucessoComposicao }}</div>
-  <div *ngIf="carregandoComposicao" class="empty">Carregando estrutura...</div>
-
-  <ng-container *ngIf="composicao && !carregandoComposicao">
-    <!-- Resumo de custos -->
-    <div class="resumo-kit">
-      <div class="resumo-item">
-        <span class="rotulo">Custo de Materiais</span>
-        <span class="valor">{{ composicao.custoMateriais | currency:'BRL' }}</span>
-      </div>
-      <div class="resumo-item">
-        <span class="rotulo">Custo de Processos</span>
-        <span class="valor">{{ composicao.custoProcessos | currency:'BRL' }}</span>
-      </div>
-      <div class="resumo-item destaque">
-        <span class="rotulo">Custo Total</span>
-        <span class="valor">{{ composicao.custoTotal | currency:'BRL' }}</span>
-      </div>
-      <div class="resumo-item">
-        <span class="rotulo">Preço de Venda</span>
-        <span class="valor">{{ composicao.precoVenda | currency:'BRL' }}</span>
-      </div>
-      <div class="resumo-item">
-        <span class="rotulo">Margem</span>
-        <span class="valor" [ngClass]="(composicao.margemPercentual ?? 0) >= 0 ? 'margem-ok' : 'margem-ruim'">
-          {{ composicao.margemPercentual !== null && composicao.margemPercentual !== undefined
-              ? (composicao.margemPercentual | number:'1.0-2') + '%' : '—' }}
-        </span>
-      </div>
-      <div class="resumo-item">
-        <span class="rotulo">Kits possíveis (estoque)</span>
-        <span class="valor">{{ composicao.kitsPossiveis ?? '—' }}</span>
-      </div>
-    </div>
-
-    <!-- MATERIAIS -->
-    <h4 class="sub-titulo">📦 Materiais / Componentes</h4>
-    <div class="linha-add">
-      <select [(ngModel)]="novoComponenteId">
-        <option value="">— Selecione o componente —</option>
-        <option *ngFor="let c of componentesDisponiveis" [value]="c.id">
-          {{ c.codigo }} - {{ c.descricao }} ({{ c.unidadeMedidaSigla || 'UN' }})
-        </option>
-      </select>
-      <label class="qtd-label">Qtd por kit</label>
-      <input type="number" step="0.01" min="0.01" [(ngModel)]="novaQtdComponente" />
-      <button class="btn btn-sm" (click)="adicionarComponente()">➕ Adicionar</button>
-    </div>
-
-    <table class="table table-sm" *ngIf="composicao.componentes.length > 0; else semComponentes">
+  @if (!loading && bom.length > 0) {
+    <table class="table">
       <thead>
         <tr>
           <th>Código</th>
-          <th>Componente</th>
-          <th>Qtd</th>
-          <th>Custo Unit.</th>
+          <th>Descrição</th>
+          <th>Componentes</th>
+          <th>Processos</th>
+          <th>Custo Materiais</th>
+          <th>Custo Processos</th>
           <th>Custo Total</th>
-          <th>Estoque</th>
-          <th>Kits possíveis</th>
+          <th>Preço Venda</th>
+          <th>Margem</th>
           <th></th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let c of composicao.componentes" [class.linha-falta]="(c.kitsPossiveis ?? 0) < 1">
-          <td>{{ c.componenteCodigo }}</td>
-          <td><strong>{{ c.componenteDescricao }}</strong></td>
-          <td>
-            <input type="number" step="0.01" min="0.01" [(ngModel)]="c.quantidade"
-                   (change)="alterarQtdComponente(c)" style="width:90px" />
-            <small class="unid">{{ c.componenteUnidade || 'UN' }}</small>
-          </td>
-          <td>{{ c.custoUnitario | currency:'BRL' }}</td>
-          <td><strong>{{ c.custoTotal | currency:'BRL' }}</strong></td>
-          <td>{{ c.estoqueDisponivel | number:'1.0-2' }}</td>
-          <td>
-            <span class="badge" [ngClass]="(c.kitsPossiveis ?? 0) >= 1 ? 'badge-green' : 'badge-red'">
-              {{ c.kitsPossiveis ?? 0 }}
-            </span>
-          </td>
-          <td>
-            <button class="btn btn-sm btn-danger" (click)="removerComponente(c)">✕</button>
-          </td>
-        </tr>
+        @for (b of bom; track b) {
+          <tr>
+            <td><strong>{{ b.codigo }}</strong></td>
+            <td>{{ b.descricao }}</td>
+            <td>{{ b.qtdComponentes }}</td>
+            <td>{{ b.qtdProcessos }}</td>
+            <td>{{ b.custoMateriais | currency:'BRL' }}</td>
+            <td>{{ b.custoProcessos | currency:'BRL' }}</td>
+            <td><strong>{{ b.custoTotal | currency:'BRL' }}</strong></td>
+            <td>{{ b.precoVenda | currency:'BRL' }}</td>
+            <td>
+              @if (b.margemPercentual !== null && b.margemPercentual !== undefined) {
+                <span
+                  [ngClass]="(b.margemPercentual || 0) >= 0 ? 'margem-ok' : 'margem-ruim'">
+                  {{ b.margemPercentual | number:'1.0-2' }}%
+                </span>
+              }
+              @if (b.margemPercentual === null || b.margemPercentual === undefined) {
+                <span>—</span>
+              }
+            </td>
+            <td class="actions">
+              <button class="btn btn-sm btn-purple" (click)="kitSelecionadoId = b.produtoId; selecionarKit()">
+                ✏️ Editar estrutura
+              </button>
+            </td>
+          </tr>
+        }
       </tbody>
     </table>
-    <ng-template #semComponentes>
-      <div class="empty">Nenhum componente cadastrado. Adicione as matérias-primas acima.</div>
-    </ng-template>
-
-    <!-- PROCESSOS -->
-    <h4 class="sub-titulo">⚙️ Processos de fabricação</h4>
-    <div class="linha-add">
-      <select [(ngModel)]="novoProcessoId">
-        <option value="">— Selecione o processo —</option>
-        <option *ngFor="let p of processos" [value]="p.id">
-          {{ p.nome }} ({{ p.valorHora | currency:'BRL' }}/h)
-        </option>
-      </select>
-      <label class="qtd-label">Horas</label>
-      <input type="number" step="0.1" min="0.1" [(ngModel)]="novasHoras" />
-      <button class="btn btn-sm" (click)="adicionarProcesso()">➕ Adicionar</button>
-    </div>
-
-    <div class="empty" *ngIf="processos.length === 0">
-      Nenhum processo cadastrado. Cadastre no menu <strong>Processos</strong> (nome + valor/hora).
-    </div>
-
-    <table class="table table-sm" *ngIf="composicao.processos.length > 0; else semProcessos">
-      <thead>
-        <tr>
-          <th>Processo</th>
-          <th>Valor/Hora</th>
-          <th>Horas</th>
-          <th>Custo Total</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let p of composicao.processos">
-          <td><strong>{{ p.processoNome }}</strong></td>
-          <td>{{ p.valorHora | currency:'BRL' }}</td>
-          <td>
-            <input type="number" step="0.1" min="0.1" [(ngModel)]="p.horas"
-                   (change)="alterarHoras(p)" style="width:90px" />
-            <small class="unid">h</small>
-          </td>
-          <td><strong>{{ p.custoTotal | currency:'BRL' }}</strong></td>
-          <td>
-            <button class="btn btn-sm btn-danger" (click)="removerProcesso(p)">✕</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-    <ng-template #semProcessos>
-      <div class="empty">Nenhum processo vinculado ao kit.</div>
-    </ng-template>
-  </ng-container>
+  }
 </div>
+
+<!-- ================= EDITOR DA ESTRUTURA ================= -->
+@if (kitAtual) {
+  <div class="card card-composicao">
+    <div class="card-header">
+      <h2>Estrutura do Kit — {{ kitAtual.descricao }}</h2>
+    </div>
+    @if (erroComposicao) {
+      <div class="alert alert-error">{{ erroComposicao }}</div>
+    }
+    @if (sucessoComposicao) {
+      <div class="alert alert-success">{{ sucessoComposicao }}</div>
+    }
+    @if (carregandoComposicao) {
+      <div class="empty">Carregando estrutura...</div>
+    }
+    @if (composicao && !carregandoComposicao) {
+      <!-- Resumo de custos -->
+      <div class="resumo-kit">
+        <div class="resumo-item">
+          <span class="rotulo">Custo de Materiais</span>
+          <span class="valor">{{ composicao.custoMateriais | currency:'BRL' }}</span>
+        </div>
+        <div class="resumo-item">
+          <span class="rotulo">Custo de Processos</span>
+          <span class="valor">{{ composicao.custoProcessos | currency:'BRL' }}</span>
+        </div>
+        <div class="resumo-item destaque">
+          <span class="rotulo">Custo Total</span>
+          <span class="valor">{{ composicao.custoTotal | currency:'BRL' }}</span>
+        </div>
+        <div class="resumo-item">
+          <span class="rotulo">Preço de Venda</span>
+          <span class="valor">{{ composicao.precoVenda | currency:'BRL' }}</span>
+        </div>
+        <div class="resumo-item">
+          <span class="rotulo">Margem</span>
+          <span class="valor" [ngClass]="(composicao.margemPercentual ?? 0) >= 0 ? 'margem-ok' : 'margem-ruim'">
+            {{ composicao.margemPercentual !== null && composicao.margemPercentual !== undefined
+            ? (composicao.margemPercentual | number:'1.0-2') + '%' : '—' }}
+          </span>
+        </div>
+        <div class="resumo-item">
+          <span class="rotulo">Kits possíveis (estoque)</span>
+          <span class="valor">{{ composicao.kitsPossiveis ?? '—' }}</span>
+        </div>
+      </div>
+      <!-- MATERIAIS -->
+      <h4 class="sub-titulo">📦 Materiais / Componentes</h4>
+      <div class="linha-add">
+        <select [(ngModel)]="novoComponenteId">
+          <option value="">— Selecione o componente —</option>
+          @for (c of componentesDisponiveis; track c) {
+            <option [value]="c.id">
+              {{ c.codigo }} - {{ c.descricao }} ({{ c.unidadeMedidaSigla || 'UN' }})
+            </option>
+          }
+        </select>
+        <label class="qtd-label">Qtd por kit</label>
+        <input type="number" step="0.01" min="0.01" [(ngModel)]="novaQtdComponente" />
+        <button class="btn btn-sm" (click)="adicionarComponente()">➕ Adicionar</button>
+      </div>
+      @if (composicao.componentes.length > 0) {
+        <table class="table table-sm">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Componente</th>
+              <th>Qtd</th>
+              <th>Custo Unit.</th>
+              <th>Custo Total</th>
+              <th>Estoque</th>
+              <th>Kits possíveis</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (c of composicao.componentes; track c) {
+              <tr [class.linha-falta]="(c.kitsPossiveis ?? 0) < 1">
+                <td>{{ c.componenteCodigo }}</td>
+                <td><strong>{{ c.componenteDescricao }}</strong></td>
+                <td>
+                  <input type="number" step="0.01" min="0.01" [(ngModel)]="c.quantidade"
+                    (change)="alterarQtdComponente(c)" style="width:90px" />
+                    <small class="unid">{{ c.componenteUnidade || 'UN' }}</small>
+                  </td>
+                  <td>{{ c.custoUnitario | currency:'BRL' }}</td>
+                  <td><strong>{{ c.custoTotal | currency:'BRL' }}</strong></td>
+                  <td>{{ c.estoqueDisponivel | number:'1.0-2' }}</td>
+                  <td>
+                    <span class="badge" [ngClass]="(c.kitsPossiveis ?? 0) >= 1 ? 'badge-green' : 'badge-red'">
+                      {{ c.kitsPossiveis ?? 0 }}
+                    </span>
+                  </td>
+                  <td>
+                    <button class="btn btn-sm btn-danger" (click)="removerComponente(c)">✕</button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        } @else {
+          <div class="empty">Nenhum componente cadastrado. Adicione as matérias-primas acima.</div>
+        }
+        <!-- PROCESSOS -->
+        <h4 class="sub-titulo">⚙️ Processos de fabricação</h4>
+        <div class="linha-add">
+          <select [(ngModel)]="novoProcessoId">
+            <option value="">— Selecione o processo —</option>
+            @for (p of processos; track p) {
+              <option [value]="p.id">
+                {{ p.nome }} ({{ p.valorHora | currency:'BRL' }}/h)
+              </option>
+            }
+          </select>
+          <label class="qtd-label">Horas</label>
+          <input type="number" step="0.1" min="0.1" [(ngModel)]="novasHoras" />
+          <button class="btn btn-sm" (click)="adicionarProcesso()">➕ Adicionar</button>
+        </div>
+        @if (processos.length === 0) {
+          <div class="empty">
+            Nenhum processo cadastrado. Cadastre no menu <strong>Processos</strong> (nome + valor/hora).
+          </div>
+        }
+        @if (composicao.processos.length > 0) {
+          <table class="table table-sm">
+            <thead>
+              <tr>
+                <th>Processo</th>
+                <th>Valor/Hora</th>
+                <th>Horas</th>
+                <th>Custo Total</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of composicao.processos; track p) {
+                <tr>
+                  <td><strong>{{ p.processoNome }}</strong></td>
+                  <td>{{ p.valorHora | currency:'BRL' }}</td>
+                  <td>
+                    <input type="number" step="0.1" min="0.1" [(ngModel)]="p.horas"
+                      (change)="alterarHoras(p)" style="width:90px" />
+                      <small class="unid">h</small>
+                    </td>
+                    <td><strong>{{ p.custoTotal | currency:'BRL' }}</strong></td>
+                    <td>
+                      <button class="btn btn-sm btn-danger" (click)="removerProcesso(p)">✕</button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          } @else {
+            <div class="empty">Nenhum processo vinculado ao kit.</div>
+          }
+        }
+      </div>
+    }

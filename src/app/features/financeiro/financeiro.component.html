@@ -6,17 +6,20 @@
   <button class="tab" [class.active]="aba === 'conciliacao'" (click)="sensiveis('conciliacao')">✅ Conciliação</button>
 </div>
 
-<div *ngIf="error" class="alert alert-error">{{ error }}</div>
-<div *ngIf="sucesso" class="alert alert-success">{{ sucesso }}</div>
+@if (error) {
+  <div class="alert alert-error">{{ error }}</div>
+}
+@if (sucesso) {
+  <div class="alert alert-success">{{ sucesso }}</div>
+}
 
 <!-- ============ CONTAS ============ -->
-<ng-container *ngIf="aba === 'receber' || aba === 'pagar'">
+@if (aba === 'receber' || aba === 'pagar') {
   <div class="card">
     <div class="card-header">
       <h2>{{ aba === 'receber' ? 'Contas a Receber' : 'Contas a Pagar' }}</h2>
       <button class="btn" (click)="novoConta(aba === 'receber' ? 2 : 1)">➕ Novo Título</button>
     </div>
-
     <div class="totais">
       <div class="tot">
         <span>Em aberto</span>
@@ -27,327 +30,382 @@
         <strong>{{ (aba === 'receber' ? receber : pagar).length }}</strong>
       </div>
     </div>
-
     <div class="filtros" style="margin-bottom:1rem">
       <input class="filtro-input" [(ngModel)]="filtroContas" (ngModelChange)="onFiltroContas()"
-             placeholder="🔍 Buscar por descrição, documento, pessoa ou banco..." />
-      <select [(ngModel)]="filtroStatusContas" (ngModelChange)="onFiltroContas()">
-        <option [ngValue]="0">Todos os status</option>
-        <option [ngValue]="1">Em aberto</option>
-        <option [ngValue]="2">Baixada</option>
-        <option [ngValue]="3">Cancelada</option>
-      </select>
-      <select [(ngModel)]="tamanhoContas" (ngModelChange)="onFiltroContas()">
-        <option [ngValue]="10">10 / pág.</option>
-        <option [ngValue]="25">25 / pág.</option>
-        <option [ngValue]="50">50 / pág.</option>
-      </select>
-    </div>
-
-    <!-- Formulário novo título -->
-    <div class="panel" *ngIf="formAberto">
-      <h3>Novo Título ({{ form.tipo === 2 ? 'A Receber' : 'A Pagar' }})</h3>
-      <div class="form-grid">
-        <div class="form-group">
-          <label>Descrição *</label>
-          <input [(ngModel)]="form.descricao" placeholder="Ex.: NF 1234 - Cliente X" />
-        </div>
-        <div class="form-group">
-          <label>Documento / NF</label>
-          <input [(ngModel)]="form.documento" />
-        </div>
-        <div class="form-group">
-          <label>Valor (R$) *</label>
-          <input type="number" step="0.01" [(ngModel)]="form.valor" />
-        </div>
-        <div class="form-group">
-          <label>Vencimento *</label>
-          <input type="date" [(ngModel)]="form.vencimento" />
-        </div>
-        <div class="form-group">
-          <label>Forma de Pagamento</label>
-          <select [(ngModel)]="form.formaPagamento">
-            <option *ngFor="let f of formas" [ngValue]="f.valor">{{ f.label }}</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Conta Bancária</label>
-          <select [(ngModel)]="form.contaBancariaId">
-            <option value="">— Nenhuma —</option>
-            <option *ngFor="let b of bancos" [value]="b.id">{{ b.nome }}</option>
-          </select>
-        </div>
-        <div class="form-group" style="grid-column: 1 / -1">
-          <label>Observação</label>
-          <input [(ngModel)]="form.observacao" />
-        </div>
-      </div>
-      <div class="form-actions">
-        <button class="btn" (click)="salvarConta()">💾 Salvar Título</button>
-        <button class="btn btn-secondary" (click)="formAberto = false">Cancelar</button>
-      </div>
-    </div>
-
-    <div *ngIf="loading" class="empty">Carregando...</div>
-    <div *ngIf="!loading && contasAba.length === 0" class="empty">Nenhum título encontrado.</div>
-
-    <table class="table" *ngIf="!loading && contasAba.length > 0">
-      <thead>
-        <tr>
-          <th>Descrição</th>
-          <th>Vencimento</th>
-          <th>Valor</th>
-          <th>Pago</th>
-          <th>Em Aberto</th>
-          <th>Status</th>
-          <th>Ações</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let c of contasPaginadas">
-          <td>
-            <strong>{{ c.descricao }}</strong>
-            <small class="sub" *ngIf="c.pessoaNome">{{ c.pessoaNome }}</small>
-            <small class="sub" *ngIf="c.contaBancariaNome">🏦 {{ c.contaBancariaNome }}</small>
-          </td>
-          <td>
-            <span [ngClass]="c.vencida && c.status === 1 ? 'vencido' : ''">{{ c.vencimento | date:'dd/MM/yyyy' }}</span>
-            <small class="sub vencido" *ngIf="c.vencida && c.status === 1">vencido</small>
-          </td>
-          <td>{{ c.valor | currency:'BRL' }}</td>
-          <td>{{ c.valorPago | currency:'BRL' }}</td>
-          <td><strong>{{ c.valorAberto | currency:'BRL' }}</strong></td>
-          <td><span class="badge" [ngClass]="statusClass(c.status)">{{ statusLabel(c.status) }}</span></td>
-          <td class="actions">
-            <button class="btn btn-sm btn-success" *ngIf="c.status === 1" (click)="abrirBaixa(c)">Baixar</button>
-            <button class="btn btn-sm btn-secondary" *ngIf="c.tipo === 2 && c.status === 1" (click)="abrirCobranca(c, 1)">Boleto</button>
-            <button class="btn btn-sm btn-secondary" *ngIf="c.tipo === 2 && c.status === 1" (click)="abrirCobranca(c, 2)">PIX</button>
-            <button class="btn btn-sm btn-danger" *ngIf="c.status === 1" (click)="cancelarConta(c)">Cancelar</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-
-    <div class="paginacao" *ngIf="!loading && totalPaginasContas > 1">
-      <button class="btn btn-sm btn-secondary" [disabled]="paginaContas <= 1" (click)="irPaginaContas(paginaContas - 1)">‹ Anterior</button>
-      <span>Página {{ paginaContas }} de {{ totalPaginasContas }}</span>
-      <button class="btn btn-sm btn-secondary" [disabled]="paginaContas >= totalPaginasContas" (click)="irPaginaContas(paginaContas + 1)">Próxima ›</button>
-    </div>
-  </div>
-</ng-container>
-
-<!-- ============ BANCOS ============ -->
-<ng-container *ngIf="aba === 'bancos'">
-  <div class="card">
-    <div class="card-header">
-      <h2>Contas Bancárias da Empresa</h2>
-      <button class="btn" (click)="novoBanco()">➕ Nova Conta</button>
-    </div>
-
-    <div class="panel" *ngIf="formBanco">
-      <h3>Nova Conta Bancária</h3>
-      <div class="form-grid">
-        <div class="form-group"><label>Nome / Apelido *</label><input [(ngModel)]="bancoNovo.nome" placeholder="Ex.: BB Operacional" /></div>
-        <div class="form-group"><label>Banco</label><input [(ngModel)]="bancoNovo.banco" placeholder="Banco do Brasil" /></div>
-        <div class="form-group"><label>Agência</label><input [(ngModel)]="bancoNovo.agencia" /></div>
-        <div class="form-group"><label>Conta</label><input [(ngModel)]="bancoNovo.conta" /></div>
-        <div class="form-group"><label>Dígito</label><input [(ngModel)]="bancoNovo.digito" /></div>
-        <div class="form-group"><label>Chave PIX</label><input [(ngModel)]="bancoNovo.chavePix" /></div>
-        <div class="form-group">
-          <label>Tipo</label>
-          <select [(ngModel)]="bancoNovo.tipo">
-            <option [ngValue]="1">Corrente</option>
-            <option [ngValue]="2">Poupança</option>
-          </select>
-        </div>
-        <div class="form-group"><label>Saldo Inicial (R$)</label><input type="number" step="0.01" [(ngModel)]="bancoNovo.saldoInicial" /></div>
-      </div>
-      <div class="form-actions">
-        <button class="btn" (click)="salvarBanco()">💾 Salvar</button>
-        <button class="btn btn-secondary" (click)="formBanco = false">Cancelar</button>
-      </div>
-    </div>
-
-    <div class="filtros" style="margin-bottom:1rem">
-      <input class="filtro-input" [(ngModel)]="filtroBancos" (ngModelChange)="onFiltroBancos()"
-             placeholder="🔍 Buscar por nome, banco, agência, conta ou PIX..." />
-    </div>
-
-    <div class="empty" *ngIf="!bancosFiltrados.length">Nenhuma conta bancária encontrada.</div>
-    <table class="table" *ngIf="bancosFiltrados.length">
-      <thead>
-        <tr><th>Nome</th><th>Banco</th><th>Agência</th><th>Conta</th><th>PIX</th><th>Saldo Atual</th><th>Ações</th></tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let b of bancosPaginados">
-          <td><strong>{{ b.nome }}</strong></td>
-          <td>{{ b.banco || '—' }}</td>
-          <td>{{ b.agencia || '—' }}</td>
-          <td>{{ b.conta }}{{ b.digito ? '-' + b.digito : '' }}</td>
-          <td>{{ b.chavePix || '—' }}</td>
-          <td><strong [ngClass]="b.saldoAtual >= 0 ? 'pos' : 'neg'">{{ b.saldoAtual | currency:'BRL' }}</strong></td>
-          <td class="actions">
-            <button class="btn btn-sm btn-danger" (click)="excluirBanco(b)">Excluir</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-
-    <div class="paginacao" *ngIf="totalPaginasBancos > 1">
-      <button class="btn btn-sm btn-secondary" [disabled]="paginaBancos <= 1" (click)="irPaginaBancos(paginaBancos - 1)">‹ Anterior</button>
-      <span>Página {{ paginaBancos }} de {{ totalPaginasBancos }}</span>
-      <button class="btn btn-sm btn-secondary" [disabled]="paginaBancos >= totalPaginasBancos" (click)="irPaginaBancos(paginaBancos + 1)">Próxima ›</button>
-    </div>
-  </div>
-</ng-container>
-
-<!-- ============ BOLETO / PIX ============ -->
-<ng-container *ngIf="aba === 'cobrancas'">
-  <div class="card" *ngIf="ultimaCobranca">
-    <div class="card-header"><h2>✅ Cobrança Gerada</h2></div>
-    <div class="cob-box">
-      <div *ngIf="ultimaCobranca.tipo === 1">
-        <label>Linha Digitável</label>
-        <div class="codigo" (click)="copiar(ultimaCobranca.linhaDigitavel)">{{ ultimaCobranca.linhaDigitavel }}</div>
-        <label style="margin-top:12px">Código de Barras</label>
-        <div class="codigo" (click)="copiar(ultimaCobranca.codigoBarras)">{{ ultimaCobranca.codigoBarras }}</div>
-      </div>
-      <div *ngIf="ultimaCobranca.tipo === 2">
-        <label>PIX Copia e Cola</label>
-        <div class="codigo" (click)="copiar(ultimaCobranca.pixCopiaECola)">{{ ultimaCobranca.pixCopiaECola }}</div>
-      </div>
-      <p class="hint">Clique no código para copiar.</p>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-header"><h2>Boletos e PIX gerados ({{ cobrancasFiltradas.length }})</h2></div>
-
-    <div class="filtros" style="margin-bottom:1rem">
-      <input class="filtro-input" [(ngModel)]="filtroCobrancas" (ngModelChange)="onFiltroCobrancas()"
-             placeholder="🔍 Buscar por nosso número, linha digitável ou PIX..." />
-    </div>
-
-    <div class="empty" *ngIf="!cobrancasFiltradas.length">Nenhuma cobrança encontrada. Vá em Contas a Receber e clique em "Boleto" ou "PIX".</div>
-    <table class="table" *ngIf="cobrancasFiltradas.length">
-      <thead>
-        <tr><th>Tipo</th><th>Valor</th><th>Vencimento</th><th>Identificação</th><th>Situação</th><th>Gerada em</th></tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let c of cobrancasPaginadas">
-          <td><span class="badge" [ngClass]="c.tipo === 1 ? 'badge-blue' : 'badge-green'">{{ c.tipo === 1 ? 'Boleto' : 'PIX' }}</span></td>
-          <td>{{ c.valor | currency:'BRL' }}</td>
-          <td>{{ c.vencimento ? (c.vencimento | date:'dd/MM/yyyy') : '—' }}</td>
-          <td class="mono">{{ c.tipo === 1 ? (c.linhaDigitavel || c.nossoNumero) : (c.pixCopiaECola || '—') }}</td>
-          <td><span class="badge" [ngClass]="c.pago ? 'badge-green' : 'badge-orange'">{{ c.pago ? 'Pago' : 'Aguardando' }}</span></td>
-          <td>{{ c.dataCadastro | date:'dd/MM/yyyy HH:mm' }}</td>
-        </tr>
-      </tbody>
-    </table>
-
-    <div class="paginacao" *ngIf="totalPaginasCobrancas > 1">
-      <button class="btn btn-sm btn-secondary" [disabled]="paginaCobrancas <= 1" (click)="irPaginaCobrancas(paginaCobrancas - 1)">‹ Anterior</button>
-      <span>Página {{ paginaCobrancas }} de {{ totalPaginasCobrancas }}</span>
-      <button class="btn btn-sm btn-secondary" [disabled]="paginaCobrancas >= totalPaginasCobrancas" (click)="irPaginaCobrancas(paginaCobrancas + 1)">Próxima ›</button>
-    </div>
-  </div>
-</ng-container>
-
-<!-- ============ CONCILIAÇÃO ============ -->
-<ng-container *ngIf="aba === 'conciliacao'">
-  <div class="card">
-    <div class="card-header">
-      <h2>Conciliação Bancária</h2>
-      <button class="btn" (click)="novaConc()">➕ Nova Conciliação</button>
-    </div>
-
-    <div class="panel" *ngIf="formConc">
-      <h3>Nova Conciliação</h3>
-      <div class="form-grid">
-        <div class="form-group">
-          <label>Conta Bancária *</label>
-          <select [(ngModel)]="conc.contaBancariaId">
-            <option value="">— Selecione —</option>
-            <option *ngFor="let b of bancos" [value]="b.id">{{ b.nome }}</option>
-          </select>
-        </div>
-        <div class="form-group"><label>Data Início *</label><input type="date" [(ngModel)]="conc.dataInicio" /></div>
-        <div class="form-group"><label>Data Fim *</label><input type="date" [(ngModel)]="conc.dataFim" /></div>
-        <div class="form-group"><label>Saldo Extrato Inicial (R$)</label><input type="number" step="0.01" [(ngModel)]="conc.saldoExtratoInicial" /></div>
-        <div class="form-group"><label>Saldo Extrato Final (R$)</label><input type="number" step="0.01" [(ngModel)]="conc.saldoExtratoFinal" /></div>
-        <div class="form-group" style="grid-column: 1 / -1"><label>Observação</label><input [(ngModel)]="conc.observacao" /></div>
-      </div>
-      <div class="form-actions">
-        <button class="btn" (click)="criarConc()">💾 Criar Conciliação</button>
-        <button class="btn btn-secondary" (click)="formConc = false">Cancelar</button>
-      </div>
-      <p class="hint">O saldo do sistema é calculado automaticamente com base nas baixas do período nessa conta bancária.</p>
-    </div>
-
-    <div class="filtros" style="margin-bottom:1rem">
-      <input class="filtro-input" [(ngModel)]="filtroConc" (ngModelChange)="onFiltroConc()"
-             placeholder="🔍 Buscar por conta bancária..." />
-    </div>
-
-    <div class="empty" *ngIf="!concFiltradas.length">Nenhuma conciliação encontrada.</div>
-    <table class="table" *ngIf="concFiltradas.length">
-      <thead>
-        <tr><th>Conta</th><th>Período</th><th>Sistema</th><th>Extrato</th><th>Diferença</th><th>Itens</th><th>Situação</th><th>Ações</th></tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let c of concPaginadas">
-          <td><strong>{{ c.contaBancariaNome || bancoNome(c.contaBancariaId) }}</strong></td>
-          <td>{{ c.dataInicio | date:'dd/MM/yyyy' }} a {{ c.dataFim | date:'dd/MM/yyyy' }}</td>
-          <td>{{ c.saldoSistema | currency:'BRL' }}</td>
-          <td>{{ c.saldoExtratoFinal | currency:'BRL' }}</td>
-          <td><strong [ngClass]="conciliado(c) ? 'pos' : 'neg'">{{ c.diferenca | currency:'BRL' }}</strong></td>
-          <td>{{ c.itensConferidos }}/{{ c.totalItens }}</td>
-          <td><span class="badge" [ngClass]="c.fechada ? 'badge-green' : 'badge-orange'">{{ c.fechada ? 'Fechada' : 'Aberta' }}</span></td>
-          <td class="actions">
-            <button class="btn btn-sm btn-success" *ngIf="!c.fechada" (click)="fecharConc(c)">Fechar</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-
-    <div class="paginacao" *ngIf="totalPaginasConc > 1">
-      <button class="btn btn-sm btn-secondary" [disabled]="paginaConc <= 1" (click)="irPaginaConc(paginaConc - 1)">‹ Anterior</button>
-      <span>Página {{ paginaConc }} de {{ totalPaginasConc }}</span>
-      <button class="btn btn-sm btn-secondary" [disabled]="paginaConc >= totalPaginasConc" (click)="irPaginaConc(paginaConc + 1)">Próxima ›</button>
-    </div>
-  </div>
-</ng-container>
-
-<!-- ============ MODAL DE BAIXA ============ -->
-<div class="overlay" *ngIf="baixando">
-  <div class="modal">
-    <h3>Baixar Título</h3>
-    <p class="modal-desc">{{ baixando.descricao }} — em aberto: <strong>{{ baixando.valorAberto | currency:'BRL' }}</strong></p>
-
-    <div class="form-grid">
-      <div class="form-group"><label>Valor da Baixa (R$) *</label><input type="number" step="0.01" [(ngModel)]="baixa.valor" /></div>
-      <div class="form-group"><label>Desconto (R$)</label><input type="number" step="0.01" [(ngModel)]="baixa.desconto" /></div>
-      <div class="form-group"><label>Juros/Multa (R$)</label><input type="number" step="0.01" [(ngModel)]="baixa.juros" /></div>
-      <div class="form-group"><label>Data da Baixa</label><input type="date" [(ngModel)]="baixa.dataBaixa" /></div>
-      <div class="form-group">
-        <label>Forma de Pagamento</label>
-        <select [(ngModel)]="baixa.formaPagamento">
-          <option *ngFor="let f of formas" [ngValue]="f.valor">{{ f.label }}</option>
+        placeholder="🔍 Buscar por descrição, documento, pessoa ou banco..." />
+        <select [(ngModel)]="filtroStatusContas" (ngModelChange)="onFiltroContas()">
+          <option [ngValue]="0">Todos os status</option>
+          <option [ngValue]="1">Em aberto</option>
+          <option [ngValue]="2">Baixada</option>
+          <option [ngValue]="3">Cancelada</option>
+        </select>
+        <select [(ngModel)]="tamanhoContas" (ngModelChange)="onFiltroContas()">
+          <option [ngValue]="10">10 / pág.</option>
+          <option [ngValue]="25">25 / pág.</option>
+          <option [ngValue]="50">50 / pág.</option>
         </select>
       </div>
-      <div class="form-group">
-        <label>Conta Bancária</label>
-        <select [(ngModel)]="baixa.contaBancariaId">
-          <option value="">— Nenhuma —</option>
-          <option *ngFor="let b of bancos" [value]="b.id">{{ b.nome }}</option>
-        </select>
-      </div>
-      <div class="form-group" style="grid-column: 1 / -1"><label>Observação</label><input [(ngModel)]="baixa.observacao" /></div>
+      <!-- Formulário novo título -->
+      @if (formAberto) {
+        <div class="panel">
+          <h3>Novo Título ({{ form.tipo === 2 ? 'A Receber' : 'A Pagar' }})</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Descrição *</label>
+              <input [(ngModel)]="form.descricao" placeholder="Ex.: NF 1234 - Cliente X" />
+            </div>
+            <div class="form-group">
+              <label>Documento / NF</label>
+              <input [(ngModel)]="form.documento" />
+            </div>
+            <div class="form-group">
+              <label>Valor (R$) *</label>
+              <input type="number" step="0.01" [(ngModel)]="form.valor" />
+            </div>
+            <div class="form-group">
+              <label>Vencimento *</label>
+              <input type="date" [(ngModel)]="form.vencimento" />
+            </div>
+            <div class="form-group">
+              <label>Forma de Pagamento</label>
+              <select [(ngModel)]="form.formaPagamento">
+                @for (f of formas; track f) {
+                  <option [ngValue]="f.valor">{{ f.label }}</option>
+                }
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Conta Bancária</label>
+              <select [(ngModel)]="form.contaBancariaId">
+                <option value="">— Nenhuma —</option>
+                @for (b of bancos; track b) {
+                  <option [value]="b.id">{{ b.nome }}</option>
+                }
+              </select>
+            </div>
+            <div class="form-group" style="grid-column: 1 / -1">
+              <label>Observação</label>
+              <input [(ngModel)]="form.observacao" />
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="btn" (click)="salvarConta()">💾 Salvar Título</button>
+            <button class="btn btn-secondary" (click)="formAberto = false">Cancelar</button>
+          </div>
+        </div>
+      }
+      @if (loading) {
+        <div class="empty">Carregando...</div>
+      }
+      @if (!loading && contasAba.length === 0) {
+        <div class="empty">Nenhum título encontrado.</div>
+      }
+      @if (!loading && contasAba.length > 0) {
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Descrição</th>
+              <th>Vencimento</th>
+              <th>Valor</th>
+              <th>Pago</th>
+              <th>Em Aberto</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (c of contasPaginadas; track c) {
+              <tr>
+                <td>
+                  <strong>{{ c.descricao }}</strong>
+                  @if (c.pessoaNome) {
+                    <small class="sub">{{ c.pessoaNome }}</small>
+                  }
+                  @if (c.contaBancariaNome) {
+                    <small class="sub">🏦 {{ c.contaBancariaNome }}</small>
+                  }
+                </td>
+                <td>
+                  <span [ngClass]="c.vencida && c.status === 1 ? 'vencido' : ''">{{ c.vencimento | date:'dd/MM/yyyy' }}</span>
+                  @if (c.vencida && c.status === 1) {
+                    <small class="sub vencido">vencido</small>
+                  }
+                </td>
+                <td>{{ c.valor | currency:'BRL' }}</td>
+                <td>{{ c.valorPago | currency:'BRL' }}</td>
+                <td><strong>{{ c.valorAberto | currency:'BRL' }}</strong></td>
+                <td><span class="badge" [ngClass]="statusClass(c.status)">{{ statusLabel(c.status) }}</span></td>
+                <td class="actions">
+                  @if (c.status === 1) {
+                    <button class="btn btn-sm btn-success" (click)="abrirBaixa(c)">Baixar</button>
+                  }
+                  @if (c.tipo === 2 && c.status === 1) {
+                    <button class="btn btn-sm btn-secondary" (click)="abrirCobranca(c, 1)">Boleto</button>
+                  }
+                  @if (c.tipo === 2 && c.status === 1) {
+                    <button class="btn btn-sm btn-secondary" (click)="abrirCobranca(c, 2)">PIX</button>
+                  }
+                  @if (c.status === 1) {
+                    <button class="btn btn-sm btn-danger" (click)="cancelarConta(c)">Cancelar</button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+      @if (!loading && totalPaginasContas > 1) {
+        <div class="paginacao">
+          <button class="btn btn-sm btn-secondary" [disabled]="paginaContas <= 1" (click)="irPaginaContas(paginaContas - 1)">‹ Anterior</button>
+          <span>Página {{ paginaContas }} de {{ totalPaginasContas }}</span>
+          <button class="btn btn-sm btn-secondary" [disabled]="paginaContas >= totalPaginasContas" (click)="irPaginaContas(paginaContas + 1)">Próxima ›</button>
+        </div>
+      }
     </div>
+  }
 
-    <div class="form-actions">
-      <button class="btn btn-success" (click)="confirmarBaixa()">✅ Confirmar Baixa</button>
-      <button class="btn btn-secondary" (click)="baixando = null">Cancelar</button>
-    </div>
-  </div>
-</div>
+  <!-- ============ BANCOS ============ -->
+  @if (aba === 'bancos') {
+    <div class="card">
+      <div class="card-header">
+        <h2>Contas Bancárias da Empresa</h2>
+        <button class="btn" (click)="novoBanco()">➕ Nova Conta</button>
+      </div>
+      @if (formBanco) {
+        <div class="panel">
+          <h3>Nova Conta Bancária</h3>
+          <div class="form-grid">
+            <div class="form-group"><label>Nome / Apelido *</label><input [(ngModel)]="bancoNovo.nome" placeholder="Ex.: BB Operacional" /></div>
+            <div class="form-group"><label>Banco</label><input [(ngModel)]="bancoNovo.banco" placeholder="Banco do Brasil" /></div>
+            <div class="form-group"><label>Agência</label><input [(ngModel)]="bancoNovo.agencia" /></div>
+            <div class="form-group"><label>Conta</label><input [(ngModel)]="bancoNovo.conta" /></div>
+            <div class="form-group"><label>Dígito</label><input [(ngModel)]="bancoNovo.digito" /></div>
+            <div class="form-group"><label>Chave PIX</label><input [(ngModel)]="bancoNovo.chavePix" /></div>
+            <div class="form-group">
+              <label>Tipo</label>
+              <select [(ngModel)]="bancoNovo.tipo">
+                <option [ngValue]="1">Corrente</option>
+                <option [ngValue]="2">Poupança</option>
+              </select>
+            </div>
+            <div class="form-group"><label>Saldo Inicial (R$)</label><input type="number" step="0.01" [(ngModel)]="bancoNovo.saldoInicial" /></div>
+          </div>
+          <div class="form-actions">
+            <button class="btn" (click)="salvarBanco()">💾 Salvar</button>
+            <button class="btn btn-secondary" (click)="formBanco = false">Cancelar</button>
+          </div>
+        </div>
+      }
+      <div class="filtros" style="margin-bottom:1rem">
+        <input class="filtro-input" [(ngModel)]="filtroBancos" (ngModelChange)="onFiltroBancos()"
+          placeholder="🔍 Buscar por nome, banco, agência, conta ou PIX..." />
+        </div>
+        @if (!bancosFiltrados.length) {
+          <div class="empty">Nenhuma conta bancária encontrada.</div>
+        }
+        @if (bancosFiltrados.length) {
+          <table class="table">
+            <thead>
+              <tr><th>Nome</th><th>Banco</th><th>Agência</th><th>Conta</th><th>PIX</th><th>Saldo Atual</th><th>Ações</th></tr>
+            </thead>
+            <tbody>
+              @for (b of bancosPaginados; track b) {
+                <tr>
+                  <td><strong>{{ b.nome }}</strong></td>
+                  <td>{{ b.banco || '—' }}</td>
+                  <td>{{ b.agencia || '—' }}</td>
+                  <td>{{ b.conta }}{{ b.digito ? '-' + b.digito : '' }}</td>
+                  <td>{{ b.chavePix || '—' }}</td>
+                  <td><strong [ngClass]="b.saldoAtual >= 0 ? 'pos' : 'neg'">{{ b.saldoAtual | currency:'BRL' }}</strong></td>
+                  <td class="actions">
+                    <button class="btn btn-sm btn-danger" (click)="excluirBanco(b)">Excluir</button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+        @if (totalPaginasBancos > 1) {
+          <div class="paginacao">
+            <button class="btn btn-sm btn-secondary" [disabled]="paginaBancos <= 1" (click)="irPaginaBancos(paginaBancos - 1)">‹ Anterior</button>
+            <span>Página {{ paginaBancos }} de {{ totalPaginasBancos }}</span>
+            <button class="btn btn-sm btn-secondary" [disabled]="paginaBancos >= totalPaginasBancos" (click)="irPaginaBancos(paginaBancos + 1)">Próxima ›</button>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ============ BOLETO / PIX ============ -->
+    @if (aba === 'cobrancas') {
+      @if (ultimaCobranca) {
+        <div class="card">
+          <div class="card-header"><h2>✅ Cobrança Gerada</h2></div>
+          <div class="cob-box">
+            @if (ultimaCobranca.tipo === 1) {
+              <div>
+                <label>Linha Digitável</label>
+                <div class="codigo" (click)="copiar(ultimaCobranca.linhaDigitavel)">{{ ultimaCobranca.linhaDigitavel }}</div>
+                <label style="margin-top:12px">Código de Barras</label>
+                <div class="codigo" (click)="copiar(ultimaCobranca.codigoBarras)">{{ ultimaCobranca.codigoBarras }}</div>
+              </div>
+            }
+            @if (ultimaCobranca.tipo === 2) {
+              <div>
+                <label>PIX Copia e Cola</label>
+                <div class="codigo" (click)="copiar(ultimaCobranca.pixCopiaECola)">{{ ultimaCobranca.pixCopiaECola }}</div>
+              </div>
+            }
+            <p class="hint">Clique no código para copiar.</p>
+          </div>
+        </div>
+      }
+      <div class="card">
+        <div class="card-header"><h2>Boletos e PIX gerados ({{ cobrancasFiltradas.length }})</h2></div>
+        <div class="filtros" style="margin-bottom:1rem">
+          <input class="filtro-input" [(ngModel)]="filtroCobrancas" (ngModelChange)="onFiltroCobrancas()"
+            placeholder="🔍 Buscar por nosso número, linha digitável ou PIX..." />
+          </div>
+          @if (!cobrancasFiltradas.length) {
+            <div class="empty">Nenhuma cobrança encontrada. Vá em Contas a Receber e clique em "Boleto" ou "PIX".</div>
+          }
+          @if (cobrancasFiltradas.length) {
+            <table class="table">
+              <thead>
+                <tr><th>Tipo</th><th>Valor</th><th>Vencimento</th><th>Identificação</th><th>Situação</th><th>Gerada em</th></tr>
+              </thead>
+              <tbody>
+                @for (c of cobrancasPaginadas; track c) {
+                  <tr>
+                    <td><span class="badge" [ngClass]="c.tipo === 1 ? 'badge-blue' : 'badge-green'">{{ c.tipo === 1 ? 'Boleto' : 'PIX' }}</span></td>
+                    <td>{{ c.valor | currency:'BRL' }}</td>
+                    <td>{{ c.vencimento ? (c.vencimento | date:'dd/MM/yyyy') : '—' }}</td>
+                    <td class="mono">{{ c.tipo === 1 ? (c.linhaDigitavel || c.nossoNumero) : (c.pixCopiaECola || '—') }}</td>
+                    <td><span class="badge" [ngClass]="c.pago ? 'badge-green' : 'badge-orange'">{{ c.pago ? 'Pago' : 'Aguardando' }}</span></td>
+                    <td>{{ c.dataCadastro | date:'dd/MM/yyyy HH:mm' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+          @if (totalPaginasCobrancas > 1) {
+            <div class="paginacao">
+              <button class="btn btn-sm btn-secondary" [disabled]="paginaCobrancas <= 1" (click)="irPaginaCobrancas(paginaCobrancas - 1)">‹ Anterior</button>
+              <span>Página {{ paginaCobrancas }} de {{ totalPaginasCobrancas }}</span>
+              <button class="btn btn-sm btn-secondary" [disabled]="paginaCobrancas >= totalPaginasCobrancas" (click)="irPaginaCobrancas(paginaCobrancas + 1)">Próxima ›</button>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- ============ CONCILIAÇÃO ============ -->
+      @if (aba === 'conciliacao') {
+        <div class="card">
+          <div class="card-header">
+            <h2>Conciliação Bancária</h2>
+            <button class="btn" (click)="novaConc()">➕ Nova Conciliação</button>
+          </div>
+          @if (formConc) {
+            <div class="panel">
+              <h3>Nova Conciliação</h3>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>Conta Bancária *</label>
+                  <select [(ngModel)]="conc.contaBancariaId">
+                    <option value="">— Selecione —</option>
+                    @for (b of bancos; track b) {
+                      <option [value]="b.id">{{ b.nome }}</option>
+                    }
+                  </select>
+                </div>
+                <div class="form-group"><label>Data Início *</label><input type="date" [(ngModel)]="conc.dataInicio" /></div>
+                <div class="form-group"><label>Data Fim *</label><input type="date" [(ngModel)]="conc.dataFim" /></div>
+                <div class="form-group"><label>Saldo Extrato Inicial (R$)</label><input type="number" step="0.01" [(ngModel)]="conc.saldoExtratoInicial" /></div>
+                <div class="form-group"><label>Saldo Extrato Final (R$)</label><input type="number" step="0.01" [(ngModel)]="conc.saldoExtratoFinal" /></div>
+                <div class="form-group" style="grid-column: 1 / -1"><label>Observação</label><input [(ngModel)]="conc.observacao" /></div>
+              </div>
+              <div class="form-actions">
+                <button class="btn" (click)="criarConc()">💾 Criar Conciliação</button>
+                <button class="btn btn-secondary" (click)="formConc = false">Cancelar</button>
+              </div>
+              <p class="hint">O saldo do sistema é calculado automaticamente com base nas baixas do período nessa conta bancária.</p>
+            </div>
+          }
+          <div class="filtros" style="margin-bottom:1rem">
+            <input class="filtro-input" [(ngModel)]="filtroConc" (ngModelChange)="onFiltroConc()"
+              placeholder="🔍 Buscar por conta bancária..." />
+            </div>
+            @if (!concFiltradas.length) {
+              <div class="empty">Nenhuma conciliação encontrada.</div>
+            }
+            @if (concFiltradas.length) {
+              <table class="table">
+                <thead>
+                  <tr><th>Conta</th><th>Período</th><th>Sistema</th><th>Extrato</th><th>Diferença</th><th>Itens</th><th>Situação</th><th>Ações</th></tr>
+                </thead>
+                <tbody>
+                  @for (c of concPaginadas; track c) {
+                    <tr>
+                      <td><strong>{{ c.contaBancariaNome || bancoNome(c.contaBancariaId) }}</strong></td>
+                      <td>{{ c.dataInicio | date:'dd/MM/yyyy' }} a {{ c.dataFim | date:'dd/MM/yyyy' }}</td>
+                      <td>{{ c.saldoSistema | currency:'BRL' }}</td>
+                      <td>{{ c.saldoExtratoFinal | currency:'BRL' }}</td>
+                      <td><strong [ngClass]="conciliado(c) ? 'pos' : 'neg'">{{ c.diferenca | currency:'BRL' }}</strong></td>
+                      <td>{{ c.itensConferidos }}/{{ c.totalItens }}</td>
+                      <td><span class="badge" [ngClass]="c.fechada ? 'badge-green' : 'badge-orange'">{{ c.fechada ? 'Fechada' : 'Aberta' }}</span></td>
+                      <td class="actions">
+                        @if (!c.fechada) {
+                          <button class="btn btn-sm btn-success" (click)="fecharConc(c)">Fechar</button>
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            }
+            @if (totalPaginasConc > 1) {
+              <div class="paginacao">
+                <button class="btn btn-sm btn-secondary" [disabled]="paginaConc <= 1" (click)="irPaginaConc(paginaConc - 1)">‹ Anterior</button>
+                <span>Página {{ paginaConc }} de {{ totalPaginasConc }}</span>
+                <button class="btn btn-sm btn-secondary" [disabled]="paginaConc >= totalPaginasConc" (click)="irPaginaConc(paginaConc + 1)">Próxima ›</button>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- ============ MODAL DE BAIXA ============ -->
+        @if (baixando) {
+          <div class="overlay">
+            <div class="modal">
+              <h3>Baixar Título</h3>
+              <p class="modal-desc">{{ baixando.descricao }} — em aberto: <strong>{{ baixando.valorAberto | currency:'BRL' }}</strong></p>
+              <div class="form-grid">
+                <div class="form-group"><label>Valor da Baixa (R$) *</label><input type="number" step="0.01" [(ngModel)]="baixa.valor" /></div>
+                <div class="form-group"><label>Desconto (R$)</label><input type="number" step="0.01" [(ngModel)]="baixa.desconto" /></div>
+                <div class="form-group"><label>Juros/Multa (R$)</label><input type="number" step="0.01" [(ngModel)]="baixa.juros" /></div>
+                <div class="form-group"><label>Data da Baixa</label><input type="date" [(ngModel)]="baixa.dataBaixa" /></div>
+                <div class="form-group">
+                  <label>Forma de Pagamento</label>
+                  <select [(ngModel)]="baixa.formaPagamento">
+                    @for (f of formas; track f) {
+                      <option [ngValue]="f.valor">{{ f.label }}</option>
+                    }
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Conta Bancária</label>
+                  <select [(ngModel)]="baixa.contaBancariaId">
+                    <option value="">— Nenhuma —</option>
+                    @for (b of bancos; track b) {
+                      <option [value]="b.id">{{ b.nome }}</option>
+                    }
+                  </select>
+                </div>
+                <div class="form-group" style="grid-column: 1 / -1"><label>Observação</label><input [(ngModel)]="baixa.observacao" /></div>
+              </div>
+              <div class="form-actions">
+                <button class="btn btn-success" (click)="confirmarBaixa()">✅ Confirmar Baixa</button>
+                <button class="btn btn-secondary" (click)="baixando = null">Cancelar</button>
+              </div>
+            </div>
+          </div>
+        }

@@ -3,28 +3,38 @@
     <h2>Movimentar Estoque</h2>
   </div>
 
-  <div *ngIf="error" class="alert alert-error">{{ error }}</div>
-  <div *ngIf="sucesso" class="alert alert-success">{{ sucesso }}</div>
+  @if (error) {
+    <div class="alert alert-error">{{ error }}</div>
+  }
+  @if (sucesso) {
+    <div class="alert alert-success">{{ sucesso }}</div>
+  }
 
   <div class="form-grid">
     <div class="form-group">
       <label>Produto</label>
       <select [(ngModel)]="form.produtoId">
         <option value="">— Selecione —</option>
-        <option *ngFor="let p of produtos" [value]="p.id">{{ p.codigo }} - {{ p.descricao }}</option>
+        @for (p of produtos; track p) {
+          <option [value]="p.id">{{ p.codigo }} - {{ p.descricao }}</option>
+        }
       </select>
     </div>
     <div class="form-group">
       <label>Armazém</label>
       <select [(ngModel)]="form.armazemId">
         <option value="">— Selecione —</option>
-        <option *ngFor="let a of armazens" [value]="a.id">{{ a.nome }}</option>
+        @for (a of armazens; track a) {
+          <option [value]="a.id">{{ a.nome }}</option>
+        }
       </select>
     </div>
     <div class="form-group">
       <label>Tipo de Movimentação</label>
       <select [(ngModel)]="form.tipo">
-        <option *ngFor="let t of tipos" [ngValue]="t.valor">{{ t.label }}</option>
+        @for (t of tipos; track t) {
+          <option [ngValue]="t.valor">{{ t.label }}</option>
+        }
       </select>
     </div>
     <div class="form-group">
@@ -50,96 +60,120 @@
 
   <div class="filtros" style="margin-bottom:1rem">
     <input class="filtro-input" [(ngModel)]="filtro" (ngModelChange)="onFiltro()"
-           placeholder="🔍 Buscar por produto, código ou armazém..." />
-    <select [(ngModel)]="filtroArmazem" (ngModelChange)="onFiltro()">
-      <option value="">Todos os armazéns</option>
-      <option *ngFor="let a of armazens" [value]="a.id">{{ a.nome }}</option>
-    </select>
-    <select [(ngModel)]="tamanho" (ngModelChange)="onFiltro()">
-      <option [ngValue]="10">10 / pág.</option>
-      <option [ngValue]="25">25 / pág.</option>
-      <option [ngValue]="50">50 / pág.</option>
-      <option [ngValue]="100">100 / pág.</option>
-    </select>
+      placeholder="🔍 Buscar por produto, código ou armazém..." />
+      <select [(ngModel)]="filtroArmazem" (ngModelChange)="onFiltro()">
+        <option value="">Todos os armazéns</option>
+        @for (a of armazens; track a) {
+          <option [value]="a.id">{{ a.nome }}</option>
+        }
+      </select>
+      <select [(ngModel)]="tamanho" (ngModelChange)="onFiltro()">
+        <option [ngValue]="10">10 / pág.</option>
+        <option [ngValue]="25">25 / pág.</option>
+        <option [ngValue]="50">50 / pág.</option>
+        <option [ngValue]="100">100 / pág.</option>
+      </select>
+    </div>
+
+    @if (loading) {
+      <div class="empty">Carregando...</div>
+    }
+    @if (!loading && filtradosPosicao.length === 0) {
+      <div class="empty">Nenhum estoque encontrado.</div>
+    }
+
+    @if (!loading && filtradosPosicao.length > 0) {
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Produto</th>
+            <th>Armazém</th>
+            <th>Quantidade Atual</th>
+            <th>Mínimo</th>
+            <th>Máximo</th>
+            <th>Situação</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (e of paginadosPosicao; track e) {
+            <tr [class.linha-emergencia]="e.emEmergencia">
+              <td><strong>{{ e.produtoDescricao || '—' }}</strong></td>
+              <td>{{ e.armazemNome || '—' }}</td>
+              <td>{{ e.quantidadeAtual | number:'1.0-2' }}</td>
+              <td>{{ e.quantidadeMinima | number:'1.0-2' }}</td>
+              <td>{{ e.quantidadeMaxima | number:'1.0-2' }}</td>
+              <td>
+                @if (e.emEmergencia) {
+                  <span class="badge badge-red">🚨 Emergência</span>
+                }
+                @if (!e.emEmergencia && abaixoMinimo(e)) {
+                  <span class="badge badge-orange">Abaixo do mínimo</span>
+                }
+                @if (!e.emEmergencia && !abaixoMinimo(e)) {
+                  <span class="badge badge-green">Normal</span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+
+    @if (!loading && totalPaginas > 1) {
+      <div class="paginacao">
+        <button class="btn btn-sm btn-secondary" [disabled]="pagina <= 1" (click)="irPagina(pagina - 1)">‹ Anterior</button>
+        <span>Página {{ pagina }} de {{ totalPaginas }}</span>
+        <button class="btn btn-sm btn-secondary" [disabled]="pagina >= totalPaginas" (click)="irPagina(pagina + 1)">Próxima ›</button>
+      </div>
+    }
   </div>
 
-  <div *ngIf="loading" class="empty">Carregando...</div>
-  <div *ngIf="!loading && filtradosPosicao.length === 0" class="empty">Nenhum estoque encontrado.</div>
-
-  <table class="table" *ngIf="!loading && filtradosPosicao.length > 0">
-    <thead>
-      <tr>
-        <th>Produto</th>
-        <th>Armazém</th>
-        <th>Quantidade Atual</th>
-        <th>Mínimo</th>
-        <th>Máximo</th>
-        <th>Situação</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let e of paginadosPosicao" [class.linha-emergencia]="e.emEmergencia">
-        <td><strong>{{ e.produtoDescricao || '—' }}</strong></td>
-        <td>{{ e.armazemNome || '—' }}</td>
-        <td>{{ e.quantidadeAtual | number:'1.0-2' }}</td>
-        <td>{{ e.quantidadeMinima | number:'1.0-2' }}</td>
-        <td>{{ e.quantidadeMaxima | number:'1.0-2' }}</td>
-        <td>
-          <span *ngIf="e.emEmergencia" class="badge badge-red">🚨 Emergência</span>
-          <span *ngIf="!e.emEmergencia && abaixoMinimo(e)" class="badge badge-orange">Abaixo do mínimo</span>
-          <span *ngIf="!e.emEmergencia && !abaixoMinimo(e)" class="badge badge-green">Normal</span>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-
-  <div class="paginacao" *ngIf="!loading && totalPaginas > 1">
-    <button class="btn btn-sm btn-secondary" [disabled]="pagina <= 1" (click)="irPagina(pagina - 1)">‹ Anterior</button>
-    <span>Página {{ pagina }} de {{ totalPaginas }}</span>
-    <button class="btn btn-sm btn-secondary" [disabled]="pagina >= totalPaginas" (click)="irPagina(pagina + 1)">Próxima ›</button>
-  </div>
-</div>
-
-<!-- Histórico (rastreabilidade de estoque) -->
-<div class="card" *ngIf="mostrarHistorico">
-  <div class="card-header">
-    <h2>🕓 Histórico de Movimentações ({{ filtradosHist.length }})</h2>
-    <button class="btn btn-secondary btn-sm" (click)="mostrarHistorico = false">Fechar</button>
-  </div>
-
-  <div class="filtros" style="margin-bottom:1rem">
-    <input class="filtro-input" [(ngModel)]="filtroHist" (ngModelChange)="onFiltroHist()"
-           placeholder="🔍 Buscar por produto, armazém ou observação..." />
-  </div>
-
-  <div class="empty" *ngIf="filtradosHist.length === 0">Nenhuma movimentação encontrada.</div>
-
-  <table class="table" *ngIf="filtradosHist.length > 0">
-    <thead>
-      <tr>
-        <th>Data / Hora</th>
-        <th>Produto</th>
-        <th>Armazém</th>
-        <th>Tipo</th>
-        <th>Quantidade</th>
-        <th>Observação</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let h of paginadosHist">
-        <td>{{ h.dataMovimentacao | date:'dd/MM/yyyy HH:mm' }}</td>
-        <td><strong>{{ h.produtoDescricao || '—' }}</strong></td>
-        <td>{{ h.armazemNome || '—' }}</td>
-        <td><span class="badge" [ngClass]="tipoClass(h.tipo)">{{ tipoHistorico(h.tipo) }}</span></td>
-        <td>{{ h.quantidade | number:'1.0-2' }}</td>
-        <td>{{ h.observacao || '—' }}</td>
-      </tr>
-    </tbody>
-  </table>
-
-  <div class="paginacao" *ngIf="totalPaginasHist > 1">
-    <button class="btn btn-sm btn-secondary" [disabled]="paginaHist <= 1" (click)="irPaginaHist(paginaHist - 1)">‹ Anterior</button>
-    <span>Página {{ paginaHist }} de {{ totalPaginasHist }}</span>
-    <button class="btn btn-sm btn-secondary" [disabled]="paginaHist >= totalPaginasHist" (click)="irPaginaHist(paginaHist + 1)">Próxima ›</button>
-  </div>
-</div>
+  <!-- Histórico (rastreabilidade de estoque) -->
+  @if (mostrarHistorico) {
+    <div class="card">
+      <div class="card-header">
+        <h2>🕓 Histórico de Movimentações ({{ filtradosHist.length }})</h2>
+        <button class="btn btn-secondary btn-sm" (click)="mostrarHistorico = false">Fechar</button>
+      </div>
+      <div class="filtros" style="margin-bottom:1rem">
+        <input class="filtro-input" [(ngModel)]="filtroHist" (ngModelChange)="onFiltroHist()"
+          placeholder="🔍 Buscar por produto, armazém ou observação..." />
+        </div>
+        @if (filtradosHist.length === 0) {
+          <div class="empty">Nenhuma movimentação encontrada.</div>
+        }
+        @if (filtradosHist.length > 0) {
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Data / Hora</th>
+                <th>Produto</th>
+                <th>Armazém</th>
+                <th>Tipo</th>
+                <th>Quantidade</th>
+                <th>Observação</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (h of paginadosHist; track h) {
+                <tr>
+                  <td>{{ h.dataMovimentacao | date:'dd/MM/yyyy HH:mm' }}</td>
+                  <td><strong>{{ h.produtoDescricao || '—' }}</strong></td>
+                  <td>{{ h.armazemNome || '—' }}</td>
+                  <td><span class="badge" [ngClass]="tipoClass(h.tipo)">{{ tipoHistorico(h.tipo) }}</span></td>
+                  <td>{{ h.quantidade | number:'1.0-2' }}</td>
+                  <td>{{ h.observacao || '—' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+        @if (totalPaginasHist > 1) {
+          <div class="paginacao">
+            <button class="btn btn-sm btn-secondary" [disabled]="paginaHist <= 1" (click)="irPaginaHist(paginaHist - 1)">‹ Anterior</button>
+            <span>Página {{ paginaHist }} de {{ totalPaginasHist }}</span>
+            <button class="btn btn-sm btn-secondary" [disabled]="paginaHist >= totalPaginasHist" (click)="irPaginaHist(paginaHist + 1)">Próxima ›</button>
+          </div>
+        }
+      </div>
+    }
