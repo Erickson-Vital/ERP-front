@@ -21,6 +21,18 @@ export const routes: Routes = [
     loadComponent: () => import('./features/clientes/clientes.component').then(m => m.ClientesComponent)
   },
   {
+    path: 'clientes/novo',
+    canActivate: guard,
+    data: { menu: 'clientes' },
+    loadComponent: () => import('./features/clientes/cliente-form.component').then(m => m.ClienteFormComponent)
+  },
+  {
+    path: 'clientes/:id/editar',
+    canActivate: guard,
+    data: { menu: 'clientes' },
+    loadComponent: () => import('./features/clientes/cliente-form.component').then(m => m.ClienteFormComponent)
+  },
+  {
     path: 'fornecedores',
     canActivate: guard,
     data: { menu: 'fornecedores' },

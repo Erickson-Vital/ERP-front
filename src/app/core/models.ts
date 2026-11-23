@@ -1,3 +1,18 @@
+export interface EnderecoCliente {
+  id?: string;
+  cep?: string;
+  pais?: string;
+  uf?: string;
+  cidade?: string;
+  codigoIbge?: string;
+  logradouro?: string;
+  numero?: string;
+  bairro?: string;
+  complemento?: string;
+  categoria?: string;
+  principal?: boolean;
+}
+
 export interface Cliente {
   id: string;
   nome: string;
@@ -5,12 +20,42 @@ export interface Cliente {
   inscricaoEstadual?: string;
   emailPrincipal?: string;
   telefonePrincipal?: string;
+  celular?: string;
   isentoIE: boolean;
   status: number;
   codigoCliente: string;
   limiteCredito: number;
   scoreCredito: number;
   categoria?: string;
+  observacoes?: string;
+
+  // Lista de Endereços (1:N)
+  enderecos?: EnderecoCliente[];
+
+  // Endereço
+  cep?: string;
+  pais?: string;
+  uf?: string;
+  cidade?: string;
+  codigoIbge?: string;
+  logradouro?: string;
+  numero?: string;
+  bairro?: string;
+  complemento?: string;
+  categoriaEndereco?: string;
+  enderecoPrincipal?: boolean;
+
+  // Fiscal
+  inscricaoEstadualProdutorRural?: string;
+  informacoesZonaFranca?: string;
+  regimeFiscal?: string;
+
+  // Pagamentos
+  condicaoPagamentoPadrao?: string;
+  prazoMaximoDias?: number;
+  formasPagamentoAceitas?: string;
+  observacoesPagamento?: string;
+
   dataCadastro: string;
 }
 
@@ -20,10 +65,40 @@ export interface ClienteCreate {
   inscricaoEstadual?: string;
   emailPrincipal?: string;
   telefonePrincipal?: string;
+  celular?: string;
   isentoIE: boolean;
+  status?: number;
   codigoCliente: string;
   limiteCredito: number;
   categoria?: string;
+  observacoes?: string;
+
+  // Lista de Endereços (1:N)
+  enderecos?: EnderecoCliente[];
+
+  // Endereço
+  cep?: string;
+  pais?: string;
+  uf?: string;
+  cidade?: string;
+  codigoIbge?: string;
+  logradouro?: string;
+  numero?: string;
+  bairro?: string;
+  complemento?: string;
+  categoriaEndereco?: string;
+  enderecoPrincipal?: boolean;
+
+  // Fiscal
+  inscricaoEstadualProdutorRural?: string;
+  informacoesZonaFranca?: string;
+  regimeFiscal?: string;
+
+  // Pagamentos
+  condicaoPagamentoPadrao?: string;
+  prazoMaximoDias?: number;
+  formasPagamentoAceitas?: string;
+  observacoesPagamento?: string;
 }
 
 export interface Fornecedor {
