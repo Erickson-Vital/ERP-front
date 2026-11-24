@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService } from '../../core/api.service';
-import { ClienteCreate, EnderecoCliente } from '../../core/models';
+import { ClienteCreate, EnderecoCliente, OpcaoCategoria } from '../../core/models';
 
 export type TipoListaOpcoes = 'categoriaCliente' | 'categoriaEndereco' | 'condicaoPagamento' | 'formaPagamento';
 
@@ -29,7 +29,12 @@ export class ClienteFormComponent implements OnInit {
   editandoEnderecoIndex: number | null = null;
   erroEndereco = '';
 
-  // Listas de seleção personalizáveis (salvas no localStorage para persistir edições da engrenagem)
+  // Listas de seleção carregadas das tabelas dedicadas do SQL Server
+  categoriasClienteObjs: OpcaoCategoria[] = [];
+  categoriasEnderecoObjs: OpcaoCategoria[] = [];
+  condicoesPagamentoObjs: OpcaoCategoria[] = [];
+  formasPagamentoObjs: OpcaoCategoria[] = [];
+
   categoriasCliente: string[] = [];
   categoriasEndereco: string[] = [];
   condicoesPagamento: string[] = [];
@@ -40,6 +45,7 @@ export class ClienteFormComponent implements OnInit {
   modalTipo: TipoListaOpcoes = 'categoriaCliente';
   modalTitulo = '';
   modalItens: string[] = [];
+  modalObjs: OpcaoCategoria[] = [];
   novoItemTexto = '';
   editandoIndex: number | null = null;
   editandoTexto = '';
@@ -74,7 +80,8 @@ export class ClienteFormComponent implements OnInit {
       telefonePrincipal: '',
       celular: '',
       isentoIE: false,
-      status: 1, // 1 = Ativo, 2 = Inativo
+      status: 1,
+      desativado: 0, // 0 = Ativo, 1 = Desativado
       categoria: '',
       observacoes: '',
       enderecos: [],
@@ -108,15 +115,39 @@ export class ClienteFormComponent implements OnInit {
   }
 
   get clienteAtivo(): boolean {
-    return (this.form.status ?? 1) === 1;
+    return (this.form.desativado ?? 0) === 0;
   }
 
   set clienteAtivo(val: boolean) {
+    this.form.desativado = val ? 0 : 1;
     this.form.status = val ? 1 : 2;
   }
 
   alternarAtivoCliente() {
-    this.clienteAtivo = !this.clienteAtivo;
+    this.error = '';
+    this.sucesso = '';
+    const novoDesativado = this.clienteAtivo ? 1 : 0;
+    this.form.desativado = novoDesativado;
+    this.form.status = novoDesativado === 1 ? 2 : 1;
+
+    // Se já for um cliente existente no banco, salva a mudança de status imediatamente via PATCH
+    if (this.clienteId) {
+      this.api.alterarStatusCliente(this.clienteId, novoDesativado).subscribe({
+        next: (c) => {
+          this.form.desativado = c.desativado ?? novoDesativado;
+          this.form.status = c.status ?? (novoDesativado === 1 ? 2 : 1);
+          this.sucesso = novoDesativado === 1
+            ? 'Cliente desativado com sucesso!'
+            : 'Cliente ativado com sucesso!';
+        },
+        error: () => {
+          // Reverte visualmente se falhar
+          this.form.desativado = novoDesativado === 1 ? 0 : 1;
+          this.form.status = this.form.desativado === 1 ? 2 : 1;
+          this.error = 'Erro ao atualizar o status do cliente no servidor.';
+        }
+      });
+    }
   }
 
   carregarCliente(id: string) {
@@ -132,7 +163,8 @@ export class ClienteFormComponent implements OnInit {
           telefonePrincipal: c.telefonePrincipal ?? '',
           celular: c.celular ?? '',
           isentoIE: !!c.isentoIE,
-          status: c.status ?? 1,
+          desativado: c.desativado ?? (c.status === 2 ? 1 : 0),
+          status: (c.desativado === 1 || c.status === 2) ? 2 : 1,
           categoria: c.categoria ?? '',
           observacoes: c.observacoes ?? '',
 
@@ -267,71 +299,64 @@ export class ClienteFormComponent implements OnInit {
     return [log, cidUf].filter(Boolean).join(', ');
   }
 
-  private garantirValorNaLista(lista: string[], valor: string | undefined, chaveStorage: string) {
+  private rotaPorTipo(tipo: TipoListaOpcoes): string {
+    switch (tipo) {
+      case 'categoriaCliente': return 'clientes';
+      case 'categoriaEndereco': return 'enderecos';
+      case 'condicaoPagamento': return 'condicoes-pagamento';
+      case 'formaPagamento': return 'formas-pagamento';
+    }
+  }
+
+  private garantirValorNaLista(lista: string[], valor: string | undefined, _chaveStorage: string) {
     if (valor && !lista.includes(valor)) {
       lista.push(valor);
-      this.salvarListaStorage(chaveStorage, lista);
     }
   }
 
   carregarListasOpcoes() {
-    this.categoriasCliente = this.lerListaStorage('erp_opcoes_cat_cliente', [
-      'Varejo',
-      'Atacado',
-      'Corporativo',
-      'Enterprise',
-      'Varejo/Provedor',
-      'Distribuidor',
-      'Governo'
-    ]);
-
-    this.categoriasEndereco = this.lerListaStorage('erp_opcoes_cat_endereco', [
-      'Comercial',
-      'Entrega',
-      'Cobranca',
-      'Residencial',
-      'Filial / Deposito'
-    ]);
-
-    this.condicoesPagamento = this.lerListaStorage('erp_opcoes_cond_pagto', [
-      'A Vista',
-      '7 Dias',
-      '14 Dias',
-      '28 Dias',
-      '30 Dias',
-      '30 / 60 Dias',
-      '30 / 60 / 90 Dias'
-    ]);
-
-    this.formasPagamento = this.lerListaStorage('erp_opcoes_forma_pagto', [
-      'PIX',
-      'Boleto Bancario',
-      'Transferencia / TED',
-      'Cartao de Credito',
-      'Cartao de Debito',
-      'Dinheiro',
-      'PIX e Boleto'
-    ]);
-  }
-
-  private lerListaStorage(chave: string, padrao: string[]): string[] {
-    try {
-      const raw = localStorage.getItem(chave);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    this.api.getOpcoesCategoria('clientes').subscribe({
+      next: (d) => {
+        this.categoriasClienteObjs = d;
+        this.categoriasCliente = d.map(x => x.nome);
+      },
+      error: () => {
+        this.categoriasCliente = ['Varejo', 'Atacado', 'Corporativo', 'Enterprise', 'Varejo/Provedor', 'Distribuidor', 'Governo'];
       }
-    } catch {}
-    return [...padrao];
+    });
+
+    this.api.getOpcoesCategoria('enderecos').subscribe({
+      next: (d) => {
+        this.categoriasEnderecoObjs = d;
+        this.categoriasEndereco = d.map(x => x.nome);
+      },
+      error: () => {
+        this.categoriasEndereco = ['Comercial', 'Entrega', 'Cobranca', 'Residencial', 'Filial / Deposito'];
+      }
+    });
+
+    this.api.getOpcoesCategoria('condicoes-pagamento').subscribe({
+      next: (d) => {
+        this.condicoesPagamentoObjs = d;
+        this.condicoesPagamento = d.map(x => x.nome);
+      },
+      error: () => {
+        this.condicoesPagamento = ['A Vista', '7 Dias', '14 Dias', '28 Dias', '30 Dias', '30 / 60 Dias', '30 / 60 / 90 Dias'];
+      }
+    });
+
+    this.api.getOpcoesCategoria('formas-pagamento').subscribe({
+      next: (d) => {
+        this.formasPagamentoObjs = d;
+        this.formasPagamento = d.map(x => x.nome);
+      },
+      error: () => {
+        this.formasPagamento = ['PIX', 'Boleto Bancario', 'Transferencia / TED', 'Cartao de Credito', 'Cartao de Debito', 'Dinheiro', 'PIX e Boleto'];
+      }
+    });
   }
 
-  private salvarListaStorage(chave: string, lista: string[]) {
-    try {
-      localStorage.setItem(chave, JSON.stringify(lista));
-    } catch {}
-  }
-
-  // ---------- Pop-up da Engrenagem ----------
+  // ---------- Pop-up da Engrenagem (Salvo no Banco de Dados) ----------
   abrirModalOpcoes(tipo: TipoListaOpcoes) {
     this.modalTipo = tipo;
     this.novoItemTexto = '';
@@ -339,17 +364,21 @@ export class ClienteFormComponent implements OnInit {
     this.editandoTexto = '';
 
     if (tipo === 'categoriaCliente') {
-      this.modalTitulo = 'Categorias de Cliente';
-      this.modalItens = [...this.categoriasCliente];
+      this.modalTitulo = 'Categorias de Cliente (Tabela CategoriaClientes)';
+      this.modalObjs = [...this.categoriasClienteObjs];
+      this.modalItens = this.modalObjs.map(x => x.nome);
     } else if (tipo === 'categoriaEndereco') {
-      this.modalTitulo = 'Categorias de Endereço';
-      this.modalItens = [...this.categoriasEndereco];
+      this.modalTitulo = 'Categorias de Endereço (Tabela CategoriaEnderecos)';
+      this.modalObjs = [...this.categoriasEnderecoObjs];
+      this.modalItens = this.modalObjs.map(x => x.nome);
     } else if (tipo === 'condicaoPagamento') {
-      this.modalTitulo = 'Condições de Pagamento';
-      this.modalItens = [...this.condicoesPagamento];
+      this.modalTitulo = 'Condições de Pagamento (Tabela OpcoesCondicaoPagamento)';
+      this.modalObjs = [...this.condicoesPagamentoObjs];
+      this.modalItens = this.modalObjs.map(x => x.nome);
     } else if (tipo === 'formaPagamento') {
-      this.modalTitulo = 'Formas de Pagamento Aceitas';
-      this.modalItens = [...this.formasPagamento];
+      this.modalTitulo = 'Formas de Pagamento Aceitas (Tabela OpcoesFormaPagamento)';
+      this.modalObjs = [...this.formasPagamentoObjs];
+      this.modalItens = this.modalObjs.map(x => x.nome);
     }
 
     this.modalAberto = true;
@@ -363,11 +392,20 @@ export class ClienteFormComponent implements OnInit {
   adicionarOpcaoModal() {
     const val = (this.novoItemTexto || '').trim();
     if (!val) return;
-    if (!this.modalItens.some(x => x.toLowerCase() === val.toLowerCase())) {
-      this.modalItens.push(val);
-      this.sincronizarModalComLista(val);
+    if (this.modalItens.some(x => x.toLowerCase() === val.toLowerCase())) {
+      this.novoItemTexto = '';
+      return;
     }
-    this.novoItemTexto = '';
+
+    const rota = this.rotaPorTipo(this.modalTipo);
+    this.api.addOpcaoCategoria(rota, val).subscribe({
+      next: (criado) => {
+        this.modalObjs.push(criado);
+        this.modalItens = this.modalObjs.map(x => x.nome);
+        this.sincronizarModalComLista(criado.nome);
+        this.novoItemTexto = '';
+      }
+    });
   }
 
   iniciarEdicaoOpcao(idx: number) {
@@ -379,10 +417,20 @@ export class ClienteFormComponent implements OnInit {
     const novoVal = (this.editandoTexto || '').trim();
     if (!novoVal) return;
     const antigoVal = this.modalItens[idx];
-    this.modalItens[idx] = novoVal;
-    this.editandoIndex = null;
-    this.atualizarValorSelecionadoSeEditado(antigoVal, novoVal);
-    this.sincronizarModalComLista();
+    const obj = this.modalObjs[idx];
+    const rota = this.rotaPorTipo(this.modalTipo);
+
+    if (obj?.id) {
+      this.api.updateOpcaoCategoria(rota, obj.id, novoVal).subscribe({
+        next: (atualizado) => {
+          this.modalObjs[idx] = atualizado;
+          this.modalItens[idx] = atualizado.nome;
+          this.editandoIndex = null;
+          this.atualizarValorSelecionadoSeEditado(antigoVal, atualizado.nome);
+          this.sincronizarModalComLista();
+        }
+      });
+    }
   }
 
   cancelarEdicaoOpcao() {
@@ -392,9 +440,19 @@ export class ClienteFormComponent implements OnInit {
 
   removerOpcaoModal(idx: number) {
     const removido = this.modalItens[idx];
-    this.modalItens.splice(idx, 1);
-    this.atualizarValorSelecionadoSeEditado(removido, '');
-    this.sincronizarModalComLista();
+    const obj = this.modalObjs[idx];
+    const rota = this.rotaPorTipo(this.modalTipo);
+
+    if (obj?.id) {
+      this.api.deleteOpcaoCategoria(rota, obj.id).subscribe({
+        next: () => {
+          this.modalObjs.splice(idx, 1);
+          this.modalItens.splice(idx, 1);
+          this.atualizarValorSelecionadoSeEditado(removido, '');
+          this.sincronizarModalComLista();
+        }
+      });
+    }
   }
 
   private atualizarValorSelecionadoSeEditado(antigo: string, novo: string) {
@@ -412,20 +470,20 @@ export class ClienteFormComponent implements OnInit {
 
   private sincronizarModalComLista(selecionarNovo?: string) {
     if (this.modalTipo === 'categoriaCliente') {
+      this.categoriasClienteObjs = [...this.modalObjs];
       this.categoriasCliente = [...this.modalItens];
-      this.salvarListaStorage('erp_opcoes_cat_cliente', this.categoriasCliente);
       if (selecionarNovo) this.form.categoria = selecionarNovo;
     } else if (this.modalTipo === 'categoriaEndereco') {
+      this.categoriasEnderecoObjs = [...this.modalObjs];
       this.categoriasEndereco = [...this.modalItens];
-      this.salvarListaStorage('erp_opcoes_cat_endereco', this.categoriasEndereco);
       if (selecionarNovo) this.enderecoForm.categoria = selecionarNovo;
     } else if (this.modalTipo === 'condicaoPagamento') {
+      this.condicoesPagamentoObjs = [...this.modalObjs];
       this.condicoesPagamento = [...this.modalItens];
-      this.salvarListaStorage('erp_opcoes_cond_pagto', this.condicoesPagamento);
       if (selecionarNovo) this.form.condicaoPagamentoPadrao = selecionarNovo;
     } else if (this.modalTipo === 'formaPagamento') {
+      this.formasPagamentoObjs = [...this.modalObjs];
       this.formasPagamento = [...this.modalItens];
-      this.salvarListaStorage('erp_opcoes_forma_pagto', this.formasPagamento);
       if (selecionarNovo) this.form.formasPagamentoAceitas = selecionarNovo;
     }
   }

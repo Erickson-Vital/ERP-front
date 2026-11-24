@@ -1,0 +1,456 @@
+<div class="card">
+  <div class="card-header">
+    <div>
+      <h2>{{ fornecedorId ? 'Editar Fornecedor' : 'Novo Fornecedor' }}</h2>
+      <p class="subtitulo">Preencha os dados do fornecedor navegando pelas 5 abas abaixo.</p>
+    </div>
+    <button type="button" class="btn btn-secondary" (click)="voltar()">← Voltar para Fornecedores</button>
+  </div>
+
+  @if (error) {
+    <div class="alert alert-error">{{ error }}</div>
+  }
+  @if (sucesso) {
+    <div class="alert alert-success">{{ sucesso }}</div>
+  }
+
+  @if (loading) {
+    <div class="empty">Carregando dados do fornecedor...</div>
+  } @else {
+    <!-- BARRA DE ABAS -->
+    <div class="tabs-bar">
+      <button type="button" class="tab-btn" [class.active]="abaAtiva === 'geral'" (click)="abaAtiva = 'geral'">
+        01 — Geral
+      </button>
+      <button type="button" class="tab-btn" [class.active]="abaAtiva === 'endereco'" (click)="abaAtiva = 'endereco'">
+        02 — Endereço ({{ enderecos.length }})
+      </button>
+      <button type="button" class="tab-btn" [class.active]="abaAtiva === 'fiscal'" (click)="abaAtiva = 'fiscal'">
+        03 — Fiscal
+      </button>
+      <button type="button" class="tab-btn" [class.active]="abaAtiva === 'pagamentos'" (click)="abaAtiva = 'pagamentos'">
+        04 — Pagamentos
+      </button>
+      <button type="button" class="tab-btn" [class.active]="abaAtiva === 'compras'" (click)="abaAtiva = 'compras'">
+        05 — Compras
+      </button>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 01 — GERAL                                 -->
+    <!-- ========================================== -->
+    @if (abaAtiva === 'geral') {
+      <div class="tab-content">
+        <!-- Barra de Status Ativo / Desativado -->
+        <div class="status-banner" [class.inativo]="!fornecedorAtivo">
+          <div class="status-info">
+            <span class="badge" [ngClass]="fornecedorAtivo ? 'badge-green' : 'badge-red'">
+              {{ fornecedorAtivo ? 'FORNECEDOR ATIVO' : 'FORNECEDOR DESATIVADO' }}
+            </span>
+            <span class="status-desc">
+              {{ fornecedorAtivo ? 'Este fornecedor está ativo para compras e cotações.' : 'Este fornecedor está desativado no sistema.' }}
+            </span>
+          </div>
+          <button
+            type="button"
+            class="btn btn-sm"
+            [ngClass]="fornecedorAtivo ? 'btn-danger' : 'btn-success'"
+            (click)="alternarAtivoFornecedor()"
+          >
+            {{ fornecedorAtivo ? '🚫 Desativar Fornecedor' : '✅ Ativar Fornecedor' }}
+          </button>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group span-2">
+            <label>Nome / Razão Social *</label>
+            <input [(ngModel)]="form.nome" placeholder="Razão social ou nome completo do fornecedor" />
+          </div>
+
+          <div class="form-group">
+            <label>CPF / CNPJ *</label>
+            <input [(ngModel)]="form.cpfCnpj" placeholder="00.000.000/0000-00 ou 000.000.000-00" />
+          </div>
+
+          <div class="form-group">
+            <label>Celular</label>
+            <input [(ngModel)]="form.celular" placeholder="(00) 90000-0000" />
+          </div>
+
+          <div class="form-group">
+            <label>Telefone</label>
+            <input [(ngModel)]="form.telefonePrincipal" placeholder="(00) 0000-0000" />
+          </div>
+
+          <div class="form-group">
+            <label>E-mail Principal</label>
+            <input [(ngModel)]="form.emailPrincipal" type="email" placeholder="comercial@fornecedor.com.br" />
+          </div>
+
+          <div class="form-group">
+            <label>Categorias</label>
+            <div class="select-with-gear">
+              <select [(ngModel)]="form.categoria">
+                <option value="">Selecione uma categoria...</option>
+                @for (cat of categoriasFornecedor; track cat) {
+                  <option [value]="cat">{{ cat }}</option>
+                }
+              </select>
+              <button type="button" class="btn-gear" title="Gerenciar Categorias de Fornecedor" (click)="abrirModalOpcoes('categoriaFornecedor')">
+                ⚙️
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Status</label>
+            <select [ngModel]="form.desativado ?? 0" (ngModelChange)="onStatusChange($event)">
+              <option [ngValue]="0">Ativo</option>
+              <option [ngValue]="1">Desativado</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Código do Fornecedor (Opcional)</label>
+            <input [(ngModel)]="form.codigoFornecedor" placeholder="Gerado automaticamente se vazio (ex.: FOR-0001)" />
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- ========================================== -->
+    <!-- 02 — ENDEREÇO                              -->
+    <!-- ========================================== -->
+    @if (abaAtiva === 'endereco') {
+      <div class="tab-content">
+        <div class="endereco-form-box">
+          <h3 class="sec-title">
+            {{ editandoEnderecoIndex !== null ? '✏️ Editando Endereço' : '➕ Adicionar Endereço' }}
+          </h3>
+
+          @if (erroEndereco) {
+            <div class="alert alert-error">{{ erroEndereco }}</div>
+          }
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label>CEP</label>
+              <input [(ngModel)]="enderecoForm.cep" (blur)="buscarCep()" placeholder="00000-000" />
+            </div>
+
+            <div class="form-group">
+              <label>País</label>
+              <input [(ngModel)]="enderecoForm.pais" placeholder="Brasil" />
+            </div>
+
+            <div class="form-group">
+              <label>Estado (UF) *</label>
+              <select [(ngModel)]="enderecoForm.uf">
+                <option value="">Selecione...</option>
+                @for (uf of ufs; track uf) {
+                  <option [value]="uf">{{ uf }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Cidade *</label>
+              <input [(ngModel)]="enderecoForm.cidade" placeholder="Nome da cidade" />
+            </div>
+
+            <div class="form-group">
+              <label>Código IBGE</label>
+              <input [(ngModel)]="enderecoForm.codigoIbge" placeholder="Ex.: 3550308" />
+            </div>
+
+            <div class="form-group span-2">
+              <label>Rua / Logradouro *</label>
+              <input [(ngModel)]="enderecoForm.logradouro" placeholder="Av. / Rua / Rodovia..." />
+            </div>
+
+            <div class="form-group">
+              <label>Número</label>
+              <input [(ngModel)]="enderecoForm.numero" placeholder="Nº ou S/N" />
+            </div>
+
+            <div class="form-group">
+              <label>Bairro</label>
+              <input [(ngModel)]="enderecoForm.bairro" placeholder="Bairro / Distrito" />
+            </div>
+
+            <div class="form-group">
+              <label>Complemento (Opcional)</label>
+              <input [(ngModel)]="enderecoForm.complemento" placeholder="Galpão, Bloco, Sala..." />
+            </div>
+
+            <div class="form-group">
+              <label>Categoria do Endereço</label>
+              <div class="select-with-gear">
+                <select [(ngModel)]="enderecoForm.categoria">
+                  <option value="">Selecione...</option>
+                  @for (catEnd of categoriasEndereco; track catEnd) {
+                    <option [value]="catEnd">{{ catEnd }}</option>
+                  }
+                </select>
+                <button type="button" class="btn-gear" title="Gerenciar Categorias de Endereço" (click)="abrirModalOpcoes('categoriaEndereco')">
+                  ⚙️
+                </button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Endereço Principal</label>
+              <select [(ngModel)]="enderecoForm.principal">
+                <option [ngValue]="true">Sim</option>
+                <option [ngValue]="false">Não</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="endereco-actions">
+            <button type="button" class="btn btn-sm btn-success" (click)="salvarEnderecoNaLista()">
+              {{ editandoEnderecoIndex !== null ? '✔ Atualizar Endereço na Lista' : '+ Adicionar Endereço à Lista' }}
+            </button>
+            @if (editandoEnderecoIndex !== null) {
+              <button type="button" class="btn btn-sm btn-secondary" (click)="cancelarEdicaoEndereco()">
+                Cancelar Edição
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- LISTA DE ENDEREÇOS CADASTRADOS -->
+        <div class="enderecos-lista-box">
+          <h3 class="sec-title">Endereços Cadastrados ({{ enderecos.length }})</h3>
+
+          @if (enderecos.length === 0) {
+            <div class="empty-enderecos">Nenhum endereço adicionado ainda. Preencha os campos acima e clique em "+ Adicionar Endereço à Lista".</div>
+          } @else {
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Logradouro, Cidade-UF</th>
+                  <th>Categoria</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (end of enderecos; track $index; let i = $index) {
+                  <tr>
+                    <td>
+                      <strong>{{ formatarResumoEndereco(end) }}</strong>
+                      @if (end.bairro || end.cep) {
+                        <span class="end-sub"> — {{ end.bairro }} {{ end.cep ? '(' + end.cep + ')' : '' }}</span>
+                      }
+                      @if (end.principal) {
+                        <span class="badge badge-blue ml-8">Principal</span>
+                      }
+                    </td>
+                    <td>
+                      <span class="badge badge-gray">{{ end.categoria || 'Comercial' }}</span>
+                    </td>
+                    <td class="actions">
+                      <button type="button" class="btn btn-sm btn-secondary" (click)="editarEnderecoDaLista(i)">Editar</button>
+                      <button type="button" class="btn btn-sm btn-danger" (click)="excluirEnderecoDaLista(i)">Excluir</button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- ========================================== -->
+    <!-- 03 — FISCAL                                -->
+    <!-- ========================================== -->
+    @if (abaAtiva === 'fiscal') {
+      <div class="tab-content">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Inscrição Estadual (Inscrições)</label>
+            <input [(ngModel)]="form.inscricaoEstadual" placeholder="Inscrição Estadual" />
+          </div>
+
+          <div class="form-group">
+            <label>Inscrição Municipal (Inscrições)</label>
+            <input [(ngModel)]="form.inscricaoMunicipal" placeholder="Inscrição Municipal (se aplicável)" />
+          </div>
+
+          <div class="form-group">
+            <label>Regime Tributário</label>
+            <select [(ngModel)]="form.regimeTributario">
+              <option value="">Selecione o regime tributário...</option>
+              <option value="Simples Nacional">Simples Nacional</option>
+              <option value="Lucro Presumido">Lucro Presumido</option>
+              <option value="Lucro Real">Lucro Real</option>
+              <option value="MEI - Microempreendedor Individual">MEI - Microempreendedor Individual</option>
+              <option value="Isento / Imune">Isento / Imune</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Indicador de IE</label>
+            <select [(ngModel)]="form.indicadorIE">
+              <option value="Contribuinte ICMS">1 - Contribuinte ICMS</option>
+              <option value="Contribuinte Isento">2 - Contribuinte Isento de Inscrição</option>
+              <option value="Nao Contribuinte">9 - Não Contribuinte</option>
+            </select>
+          </div>
+
+          <div class="form-group span-full">
+            <label>Configurações de Retenção</label>
+            <textarea rows="3" [(ngModel)]="form.configuracoesRetencao"
+              placeholder="Retenções de impostos na fonte aplicáveis (IRRF, CSLL, PIS, COFINS, INSS, ISS)..."></textarea>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- ========================================== -->
+    <!-- 04 — PAGAMENTOS                            -->
+    <!-- ========================================== -->
+    @if (abaAtiva === 'pagamentos') {
+      <div class="tab-content">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Condições Acordadas</label>
+            <input [(ngModel)]="form.condicoesAcordadas" placeholder="Ex.: 30 / 60 / 90 dias, 28 DDL, À Vista..." />
+          </div>
+
+          <div class="form-group">
+            <label>Formas de Pagamento</label>
+            <select [(ngModel)]="form.formasPagamentoFornecedor">
+              <option value="">Selecione a forma de pagamento...</option>
+              <option value="Boleto Bancario">Boleto Bancário</option>
+              <option value="PIX">PIX</option>
+              <option value="Transferencia / TED">Transferência / TED</option>
+              <option value="Boleto e PIX">Boleto e PIX</option>
+              <option value="Cartao Corporativo">Cartão Corporativo</option>
+              <option value="Dinheiro / Cheque">Dinheiro / Cheque</option>
+            </select>
+          </div>
+
+          <div class="form-group span-2">
+            <label>Chave PIX</label>
+            <input [(ngModel)]="form.chavePixFornecedor" placeholder="CNPJ, E-mail, Telefone ou Chave Aleatória" />
+          </div>
+
+          <div class="form-group span-full">
+            <label>Contas Bancárias</label>
+            <textarea rows="3" [(ngModel)]="form.contasBancariasTexto"
+              placeholder="Banco, Agência, Conta Corrente e Titularidade para pagamentos/transferências..."></textarea>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- ========================================== -->
+    <!-- 05 — COMPRAS                               -->
+    <!-- ========================================== -->
+    @if (abaAtiva === 'compras') {
+      <div class="tab-content">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Prazo de Entrega</label>
+            <input [(ngModel)]="form.prazoEntregaPadrao" placeholder="Ex.: 5 dias úteis, 15 dias corridos..." />
+          </div>
+
+          <div class="form-group">
+            <label>Pedido Mínimo (R$)</label>
+            <input [(ngModel)]="form.pedidoMinimo" type="number" step="0.01" min="0" placeholder="0,00" />
+          </div>
+
+          <div class="form-group">
+            <label>Frete</label>
+            <select [(ngModel)]="form.frete">
+              <option value="CIF (Por conta do Fornecedor)">CIF (Por conta do Fornecedor)</option>
+              <option value="FOB (Por conta do Comprador)">FOB (Por conta do Comprador)</option>
+              <option value="A Combinar / Retira">A Combinar / Retira</option>
+            </select>
+          </div>
+
+          <div class="form-group span-full">
+            <label>Contatos Comerciais</label>
+            <textarea rows="2" [(ngModel)]="form.contatosComerciais"
+              placeholder="Nome do representante/vendedor, telefone direto, WhatsApp e e-mail comercial..."></textarea>
+          </div>
+
+          <div class="form-group span-full">
+            <label>Observações</label>
+            <textarea rows="3" [(ngModel)]="form.observacoes"
+              placeholder="Observações gerais de compras, política de troca, garantia e negociação..."></textarea>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- RODAPÉ DE AÇÕES -->
+    <div class="form-actions footer-actions">
+      <button type="button" class="btn" [disabled]="salvando" (click)="salvar()">
+        💾 {{ salvando ? 'Salvando...' : (fornecedorId ? 'Atualizar Fornecedor' : 'Salvar Fornecedor') }}
+      </button>
+      <button type="button" class="btn btn-secondary" [disabled]="salvando" (click)="voltar()">
+        Cancelar
+      </button>
+    </div>
+  }
+</div>
+
+<!-- =================================================================== -->
+<!-- POP-UP (MODAL) DA ENGRENAGEM PARA GERENCIAR E EDITAR AS CATEGORIAS  -->
+<!-- =================================================================== -->
+@if (modalAberto) {
+  <div class="modal-backdrop" (click)="fecharModalOpcoes()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>⚙️ Gerenciar {{ modalTitulo }}</h3>
+        <button type="button" class="btn-close" (click)="fecharModalOpcoes()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="nova-opcao-row">
+          <input
+            [(ngModel)]="novoItemTexto"
+            (keyup.enter)="adicionarOpcaoModal()"
+            placeholder="Adicionar nova categoria..."
+          />
+          <button type="button" class="btn btn-sm" (click)="adicionarOpcaoModal()">+ Adicionar</button>
+        </div>
+
+        @if (modalItens.length === 0) {
+          <div class="empty-modal">Nenhuma categoria cadastrada.</div>
+        } @else {
+          <ul class="lista-opcoes">
+            @for (item of modalItens; track $index; let i = $index) {
+              <li class="opcao-item">
+                @if (editandoIndex === i) {
+                  <input
+                    class="input-edicao"
+                    [(ngModel)]="editandoTexto"
+                    (keyup.enter)="salvarEdicaoOpcao(i)"
+                  />
+                  <div class="opcao-acoes">
+                    <button type="button" class="btn btn-sm btn-success" (click)="salvarEdicaoOpcao(i)">Salvar</button>
+                    <button type="button" class="btn btn-sm btn-secondary" (click)="cancelarEdicaoOpcao()">Cancelar</button>
+                  </div>
+                } @else {
+                  <span class="opcao-nome">{{ item }}</span>
+                  <div class="opcao-acoes">
+                    <button type="button" class="btn btn-sm btn-secondary" (click)="iniciarEdicaoOpcao(i)">Editar</button>
+                    <button type="button" class="btn btn-sm btn-danger" (click)="removerOpcaoModal(i)">Excluir</button>
+                  </div>
+                }
+              </li>
+            }
+          </ul>
+        }
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="fecharModalOpcoes()">Fechar</button>
+      </div>
+    </div>
+  </div>
+}

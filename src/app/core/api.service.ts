@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
-  Cliente, ClienteCreate, Fornecedor, FornecedorCreate,
+  OpcaoCategoria, Cliente, ClienteCreate, Fornecedor, FornecedorCreate,
   Produto, ProdutoCreate, UnidadeMedida, FamiliaProduto, Armazem,
   EstoqueProduto, MovimentacaoCreate, MovimentacaoEstoque,
   PedidoVenda, PedidoVendaCreate, PedidoCompra, PedidoCompraCreate, ItemPedido,
@@ -24,6 +24,9 @@ export class ApiService {
   getCliente(id: string): Observable<Cliente> { return this.http.get<Cliente>(`${API}/clientes/${id}`); }
   createCliente(dto: ClienteCreate): Observable<Cliente> { return this.http.post<Cliente>(`${API}/clientes`, dto); }
   updateCliente(id: string, dto: ClienteCreate): Observable<void> { return this.http.put<void>(`${API}/clientes/${id}`, dto); }
+  alterarStatusCliente(id: string, desativado: number): Observable<Cliente> {
+    return this.http.patch<Cliente>(`${API}/clientes/${id}/status`, { desativado });
+  }
   deleteCliente(id: string): Observable<void> { return this.http.delete<void>(`${API}/clientes/${id}`); }
 
   // Fornecedores
@@ -31,7 +34,24 @@ export class ApiService {
   getFornecedor(id: string): Observable<Fornecedor> { return this.http.get<Fornecedor>(`${API}/fornecedores/${id}`); }
   createFornecedor(dto: FornecedorCreate): Observable<Fornecedor> { return this.http.post<Fornecedor>(`${API}/fornecedores`, dto); }
   updateFornecedor(id: string, dto: FornecedorCreate): Observable<void> { return this.http.put<void>(`${API}/fornecedores/${id}`, dto); }
+  alterarStatusFornecedor(id: string, desativado: number): Observable<Fornecedor> {
+    return this.http.patch<Fornecedor>(`${API}/fornecedores/${id}/status`, { desativado });
+  }
   deleteFornecedor(id: string): Observable<void> { return this.http.delete<void>(`${API}/fornecedores/${id}`); }
+
+  // Tabelas Dedicadas de Categorias / Opções (Engrenagens)
+  getOpcoesCategoria(rota: string): Observable<OpcaoCategoria[]> {
+    return this.http.get<OpcaoCategoria[]>(`${API}/categorias/${rota}`);
+  }
+  addOpcaoCategoria(rota: string, nome: string): Observable<OpcaoCategoria> {
+    return this.http.post<OpcaoCategoria>(`${API}/categorias/${rota}`, { nome });
+  }
+  updateOpcaoCategoria(rota: string, id: string, nome: string): Observable<OpcaoCategoria> {
+    return this.http.put<OpcaoCategoria>(`${API}/categorias/${rota}/${id}`, { nome });
+  }
+  deleteOpcaoCategoria(rota: string, id: string): Observable<void> {
+    return this.http.delete<void>(`${API}/categorias/${rota}/${id}`);
+  }
 
   // Produtos
   getProdutos(): Observable<Produto[]> { return this.http.get<Produto[]>(`${API}/produtos`); }

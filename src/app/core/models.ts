@@ -1,3 +1,8 @@
+export interface OpcaoCategoria {
+  id: string;
+  nome: string;
+}
+
 export interface EnderecoCliente {
   id?: string;
   cep?: string;
@@ -23,6 +28,8 @@ export interface Cliente {
   celular?: string;
   isentoIE: boolean;
   status: number;
+  /** 0 = Ativo, 1 = Desativado */
+  desativado?: number;
   codigoCliente: string;
   limiteCredito: number;
   scoreCredito: number;
@@ -68,6 +75,8 @@ export interface ClienteCreate {
   celular?: string;
   isentoIE: boolean;
   status?: number;
+  /** 0 = Ativo, 1 = Desativado */
+  desativado?: number;
   codigoCliente: string;
   limiteCredito: number;
   categoria?: string;
@@ -108,11 +117,49 @@ export interface Fornecedor {
   inscricaoEstadual?: string;
   emailPrincipal?: string;
   telefonePrincipal?: string;
+  celular?: string;
   isentoIE: boolean;
   status: number;
+  /** 0 = Ativo, 1 = Desativado */
+  desativado?: number;
   codigoFornecedor: string;
   prazoEntregaPadrao?: string;
   categoria?: string;
+  observacoes?: string;
+
+  // Lista de Endereços (1:N)
+  enderecos?: EnderecoCliente[];
+
+  // Endereço principal resumido
+  cep?: string;
+  pais?: string;
+  uf?: string;
+  cidade?: string;
+  codigoIbge?: string;
+  logradouro?: string;
+  numero?: string;
+  bairro?: string;
+  complemento?: string;
+  categoriaEndereco?: string;
+  enderecoPrincipal?: boolean;
+
+  // 03 — Fiscal
+  inscricaoMunicipal?: string;
+  regimeTributario?: string;
+  indicadorIE?: string;
+  configuracoesRetencao?: string;
+
+  // 04 — Pagamentos
+  condicoesAcordadas?: string;
+  formasPagamentoFornecedor?: string;
+  contasBancariasTexto?: string;
+  chavePixFornecedor?: string;
+
+  // 05 — Compras
+  pedidoMinimo?: number;
+  frete?: string;
+  contatosComerciais?: string;
+
   dataCadastro: string;
 }
 
@@ -122,10 +169,48 @@ export interface FornecedorCreate {
   inscricaoEstadual?: string;
   emailPrincipal?: string;
   telefonePrincipal?: string;
+  celular?: string;
   isentoIE: boolean;
+  status?: number;
+  /** 0 = Ativo, 1 = Desativado */
+  desativado?: number;
   codigoFornecedor: string;
   prazoEntregaPadrao?: string;
   categoria?: string;
+  observacoes?: string;
+
+  // Lista de Endereços (1:N)
+  enderecos?: EnderecoCliente[];
+
+  // Endereço principal resumido
+  cep?: string;
+  pais?: string;
+  uf?: string;
+  cidade?: string;
+  codigoIbge?: string;
+  logradouro?: string;
+  numero?: string;
+  bairro?: string;
+  complemento?: string;
+  categoriaEndereco?: string;
+  enderecoPrincipal?: boolean;
+
+  // 03 — Fiscal
+  inscricaoMunicipal?: string;
+  regimeTributario?: string;
+  indicadorIE?: string;
+  configuracoesRetencao?: string;
+
+  // 04 — Pagamentos
+  condicoesAcordadas?: string;
+  formasPagamentoFornecedor?: string;
+  contasBancariasTexto?: string;
+  chavePixFornecedor?: string;
+
+  // 05 — Compras
+  pedidoMinimo?: number;
+  frete?: string;
+  contatosComerciais?: string;
 }
 
 export interface Produto {

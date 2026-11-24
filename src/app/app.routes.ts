@@ -39,6 +39,18 @@ export const routes: Routes = [
     loadComponent: () => import('./features/fornecedores/fornecedores.component').then(m => m.FornecedoresComponent)
   },
   {
+    path: 'fornecedores/novo',
+    canActivate: guard,
+    data: { menu: 'fornecedores' },
+    loadComponent: () => import('./features/fornecedores/fornecedor-form.component').then(m => m.FornecedorFormComponent)
+  },
+  {
+    path: 'fornecedores/:id/editar',
+    canActivate: guard,
+    data: { menu: 'fornecedores' },
+    loadComponent: () => import('./features/fornecedores/fornecedor-form.component').then(m => m.FornecedorFormComponent)
+  },
+  {
     path: 'produtos',
     canActivate: guard,
     data: { menu: 'produtos' },
