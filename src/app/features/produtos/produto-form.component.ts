@@ -4,7 +4,14 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { mensagemErro } from '../../core/error-util';
-import { Produto, ProdutoCreate, UnidadeMedida, FamiliaProduto, OpcaoCategoria } from '../../core/models';
+import {
+  Produto,
+  ProdutoCreate,
+  ProdutoComposicaoItem,
+  UnidadeMedida,
+  FamiliaProduto,
+  OpcaoCategoria
+} from '../../core/models';
 
 export type TipoListaProduto =
   | 'tipo'
@@ -22,7 +29,7 @@ export type TipoListaProduto =
   styleUrl: './produto-form.component.css'
 })
 export class ProdutoFormComponent implements OnInit {
-  abaAtiva: 'geral' | 'fiscal' | 'comercial' | 'producao' = 'geral';
+  abaAtiva: 'geral' | 'fiscal' | 'comercial' | 'producao' | 'composicao' = 'geral';
   produtoId: string | null = null;
   loading = false;
   salvando = false;
@@ -31,6 +38,14 @@ export class ProdutoFormComponent implements OnInit {
 
   form: ProdutoCreate = this.blankForm();
   editando: Produto | null = null;
+
+  // ===== 05. Aba Composição (Subprodutos / Insumos incluídos) =====
+  itensComposicao: ProdutoComposicaoItem[] = [];
+  todosProdutos: Produto[] = [];
+  modalProdutosAberto = false;
+  buscaProdutoTermo = '';
+  selecionadosModal: Record<string, number> = {};
+  quantidadesTempModal: Record<string, number> = {};
 
   // Listas dedicadas (tabelas)
   unidades: UnidadeMedida[] = [];          // UnidadesMedida (também usada em Unidade Tributável)
@@ -138,6 +153,20 @@ export class ProdutoFormComponent implements OnInit {
     this.api.getOpcoesCategoria('origens-abastecimento').subscribe({
       next: d => { this.origensAbastecimentoList = d; }
     });
+    this.carregarTodosProdutos();
+  }
+
+  carregarTodosProdutos() {
+    this.api.getProdutos().subscribe({
+      next: d => {
+        this.todosProdutos = d;
+        for (const p of d) {
+          if (this.quantidadesTempModal[p.id] === undefined) {
+            this.quantidadesTempModal[p.id] = 1;
+          }
+        }
+      }
+    });
   }
 
   carregarProduto(id: string) {
@@ -171,6 +200,7 @@ export class ProdutoFormComponent implements OnInit {
           unidadeMedidaId: p.unidadeMedidaId,
           familiaProdutoId: p.familiaProdutoId
         };
+        this.itensComposicao = (p.itensComposicao ?? []).map(i => ({ ...i }));
         this.loading = false;
       },
       error: (e) => {
@@ -484,6 +514,132 @@ export class ProdutoFormComponent implements OnInit {
     return this.origensMercadoria.find(o => o.valor === this.form.origemMercadoria)?.label ?? '';
   }
 
+  // =====================================================
+  // 05. Aba Composição & Pop-up Adicionar Outros Produtos
+  // =====================================================
+  /** Soma do custo de todos os produtos inseridos na 5ª aba. */
+  get custoComponentes(): number {
+    const soma = this.itensComposicao.reduce(
+      (acc, item) => acc + (Number(item.quantidade) || 0) * (Number(item.valorCustoReferencia) || 0),
+      0
+    );
+    return +soma.toFixed(2);
+  }
+
+  /** Custo Total = Custo de Referência (R$) + Soma dos produtos inseridos na Composição. */
+  get custoTotalCalculado(): number {
+    const custoRef = Number(this.form.precoCustoMedio) || 0;
+    return +(custoRef + this.custoComponentes).toFixed(2);
+  }
+
+  custoUnitarioProduto(p: Produto): number {
+    const ct = p.custoTotal ?? p.precoCustoMedio ?? 0;
+    return +Number(ct).toFixed(2);
+  }
+
+  abrirModalProdutos() {
+    this.buscaProdutoTermo = '';
+    this.selecionadosModal = {};
+    this.quantidadesTempModal = {};
+    for (const p of this.todosProdutos) {
+      this.quantidadesTempModal[p.id] = 1;
+    }
+    this.carregarTodosProdutos();
+    this.modalProdutosAberto = true;
+  }
+
+  fecharModalProdutos() {
+    this.modalProdutosAberto = false;
+  }
+
+  get produtosFiltradosModal(): Produto[] {
+    const termo = (this.buscaProdutoTermo || '').trim().toLowerCase();
+    return this.todosProdutos.filter(p => {
+      if (this.produtoId && p.id === this.produtoId) return false;
+      if (!termo) return true;
+      const cod = (p.codigo || '').toLowerCase();
+      const barras = (p.codigoBarras || '').toLowerCase();
+      const desc = (p.descricao || '').toLowerCase();
+      return cod.includes(termo) || barras.includes(termo) || desc.includes(termo);
+    });
+  }
+
+  estaSelecionadoNoModal(produtoId: string): boolean {
+    return this.selecionadosModal[produtoId] !== undefined;
+  }
+
+  jaInseridoNaComposicao(produtoId: string): boolean {
+    return this.itensComposicao.some(i => i.componenteId === produtoId);
+  }
+
+  alternarSelecaoProdutoModal(p: Produto) {
+    if (this.estaSelecionadoNoModal(p.id)) {
+      delete this.selecionadosModal[p.id];
+    } else {
+      const qtd = Number(this.quantidadesTempModal[p.id]) > 0 ? Number(this.quantidadesTempModal[p.id]) : 1;
+      this.quantidadesTempModal[p.id] = qtd;
+      this.selecionadosModal[p.id] = qtd;
+    }
+  }
+
+  onQuantidadeModalChange(p: Produto, valor: number) {
+    const qtd = Number(valor);
+    this.quantidadesTempModal[p.id] = qtd;
+    if (qtd > 0) {
+      this.selecionadosModal[p.id] = qtd;
+    } else {
+      delete this.selecionadosModal[p.id];
+    }
+  }
+
+  get qtdSelecionadosModal(): number {
+    return Object.keys(this.selecionadosModal).length;
+  }
+
+  inserirProdutosSelecionados() {
+    const ids = Object.keys(this.selecionadosModal);
+    if (ids.length === 0) return;
+
+    for (const id of ids) {
+      const qtd = Number(this.selecionadosModal[id]) || 0;
+      if (qtd <= 0) continue;
+
+      const prod = this.todosProdutos.find(p => p.id === id);
+      if (!prod) continue;
+
+      const custoUnit = this.custoUnitarioProduto(prod);
+      const existente = this.itensComposicao.find(i => i.componenteId === id);
+
+      if (existente) {
+        existente.quantidade = +(Number(existente.quantidade) + qtd).toFixed(4);
+        existente.valorCustoReferencia = custoUnit;
+        existente.subtotal = +(existente.quantidade * custoUnit).toFixed(2);
+      } else {
+        this.itensComposicao.push({
+          componenteId: prod.id,
+          codigo: prod.codigo,
+          codigoBarras: prod.codigoBarras,
+          descricao: prod.descricao,
+          unidadeMedidaSigla: prod.unidadeMedidaSigla,
+          quantidade: qtd,
+          valorCustoReferencia: custoUnit,
+          subtotal: +(qtd * custoUnit).toFixed(2)
+        });
+      }
+    }
+
+    this.modalProdutosAberto = false;
+  }
+
+  atualizarQuantidadeItem(item: ProdutoComposicaoItem) {
+    const qtd = Number(item.quantidade) || 0;
+    item.subtotal = +(qtd * (Number(item.valorCustoReferencia) || 0)).toFixed(2);
+  }
+
+  removerItemComposicao(index: number) {
+    this.itensComposicao.splice(index, 1);
+  }
+
   // ===== Salvar / Voltar =====
   voltar() { this.router.navigate(['/produtos']); }
 
@@ -501,14 +657,29 @@ export class ProdutoFormComponent implements OnInit {
       this.abaAtiva = 'geral';
       return;
     }
-    if (this.form.precoCustoMedio > 0 && this.form.margem > 0 && this.form.precoVendaPadrao === 0) {
-      this.form.precoVendaPadrao = +(this.form.precoCustoMedio * (1 + this.form.margem / 100)).toFixed(2);
+    for (const item of this.itensComposicao) {
+      if (!item.quantidade || Number(item.quantidade) <= 0) {
+        this.error = `Informe uma quantidade maior que zero para o produto "${item.codigo} - ${item.descricao}" (aba COMPOSIÇÃO).`;
+        this.abaAtiva = 'composicao';
+        return;
+      }
+    }
+
+    const custoBase = this.custoTotalCalculado;
+    if (custoBase > 0 && this.form.margem > 0 && this.form.precoVendaPadrao === 0) {
+      this.form.precoVendaPadrao = +(custoBase * (1 + this.form.margem / 100)).toFixed(2);
     }
 
     // Garante o enum numérico a partir do Tipo de Produto selecionado (tabela dedicada)
     this.onTipoChange();
 
-    const payload: ProdutoCreate = { ...this.form };
+    const payload: ProdutoCreate = {
+      ...this.form,
+      itensComposicao: this.itensComposicao.map(i => ({
+        componenteId: i.componenteId,
+        quantidade: Number(i.quantidade)
+      }))
+    };
 
     this.salvando = true;
     if (this.produtoId) {

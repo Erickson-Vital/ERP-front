@@ -252,6 +252,25 @@ export interface Produto {
   qtdComponentes: number;
   qtdProcessos: number;
   margemPercentual?: number | null;
+  custoComponentes?: number;
+  custoTotal?: number;
+  itensComposicao?: ProdutoComposicaoItem[];
+}
+
+export interface ProdutoComposicaoItem {
+  componenteId: string;
+  codigo: string;
+  codigoBarras?: string;
+  descricao: string;
+  unidadeMedidaSigla?: string;
+  quantidade: number;
+  valorCustoReferencia: number;
+  subtotal: number;
+}
+
+export interface ProdutoComposicaoInput {
+  componenteId: string;
+  quantidade: number;
 }
 
 export interface ProdutoCreate {
@@ -279,6 +298,7 @@ export interface ProdutoCreate {
   ativo: boolean;
   unidadeMedidaId: string | null;
   familiaProdutoId: string | null;
+  itensComposicao?: ProdutoComposicaoInput[];
 }
 
 export interface UnidadeMedida {
