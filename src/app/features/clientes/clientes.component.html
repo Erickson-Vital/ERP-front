@@ -1,120 +1,123 @@
+<!-- 1º CARD: FILTROS DE PESQUISA E BOTÕES DE AÇÃO -->
 <div class="card">
   <div class="card-header">
-    <h2>{{ editando ? 'Editar Cliente' : 'Novo Cliente' }}</h2>
+    <h2>🔍 Filtros de Pesquisa — Clientes</h2>
+    <button class="btn" (click)="novoCliente()">+ Adicionar Novo Cliente</button>
+  </div>
+
+  <div class="form-grid">
+    <div class="form-group">
+      <label>Buscar (Nome, CPF/CNPJ, Código, E-mail, Telefone, Cidade)</label>
+      <input
+        [(ngModel)]="filtroTexto"
+        (keyup.enter)="aplicarFiltro()"
+        placeholder="Digite para pesquisar..."
+      />
+    </div>
+
+    <div class="form-group">
+      <label>Categoria</label>
+      <select [(ngModel)]="filtroCategoria">
+        <option value="">Todas as categorias</option>
+        @for (cat of categoriasDisponiveis; track cat) {
+          <option [value]="cat">{{ cat }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Status</label>
+      <select [(ngModel)]="filtroStatus">
+        <option value="">Todos</option>
+        <option value="0">Ativo</option>
+        <option value="1">Desativado</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="form-actions">
+    <button class="btn" (click)="aplicarFiltro()">🔍 Filtrar</button>
+    <button class="btn btn-secondary" (click)="limparFiltro()">Limpar Filtro</button>
+  </div>
+</div>
+
+<!-- 2º CARD: TABELA DE CONSULTA DE CLIENTES -->
+<div class="card">
+  <div class="card-header">
+    <h2>Clientes ({{ filtrados.length }})</h2>
+    <div class="filtros">
+      <select [(ngModel)]="tamanho" (ngModelChange)="onTamanhoChange()">
+        <option [ngValue]="10">10 / pág.</option>
+        <option [ngValue]="25">25 / pág.</option>
+        <option [ngValue]="50">50 / pág.</option>
+        <option [ngValue]="100">100 / pág.</option>
+      </select>
+    </div>
   </div>
 
   @if (error) {
     <div class="alert alert-error">{{ error }}</div>
   }
 
-  <div class="form-grid">
-    <div class="form-group">
-      <label>Nome / Razão Social *</label>
-      <input [(ngModel)]="form.nome" placeholder="Nome do cliente" />
-    </div>
-    <div class="form-group">
-      <label>CPF / CNPJ *</label>
-      <input [(ngModel)]="form.cpfCnpj" placeholder="000.000.000-00" />
-    </div>
-    <div class="form-group">
-      <label>Código do Cliente</label>
-      <input [(ngModel)]="form.codigoCliente" placeholder="CLI001" />
-    </div>
-    <div class="form-group">
-      <label>Inscrição Estadual</label>
-      <input [(ngModel)]="form.inscricaoEstadual" />
-    </div>
-    <div class="form-group">
-      <label>E-mail</label>
-      <input [(ngModel)]="form.emailPrincipal" type="email" />
-    </div>
-    <div class="form-group">
-      <label>Telefone</label>
-      <input [(ngModel)]="form.telefonePrincipal" />
-    </div>
-    <div class="form-group">
-      <label>Limite de Crédito (R$)</label>
-      <input [(ngModel)]="form.limiteCredito" type="number" step="0.01" />
-    </div>
-    <div class="form-group">
-      <label>Categoria</label>
-      <input [(ngModel)]="form.categoria" placeholder="Varejo, Atacado..." />
-    </div>
-    <div class="form-group checkbox">
-      <input id="isentoIE" type="checkbox" [(ngModel)]="form.isentoIE" />
-      <label for="isentoIE">Isento de Inscrição Estadual</label>
-    </div>
-  </div>
+  @if (loading) {
+    <div class="empty">Carregando...</div>
+  }
+  @if (!loading && filtrados.length === 0) {
+    <div class="empty">Nenhum cliente encontrado com os filtros aplicados.</div>
+  }
 
-  <div class="form-actions">
-    <button class="btn" (click)="salvar()">💾 {{ editando ? 'Atualizar' : 'Salvar' }}</button>
-    <button class="btn btn-secondary" (click)="novo()">Limpar</button>
-  </div>
-</div>
-
-<div class="card">
-  <div class="card-header">
-    <h2>Clientes ({{ filtrados.length }})</h2>
-    <div class="filtros">
-      <input class="filtro-input" [(ngModel)]="filtro" (ngModelChange)="onFiltro()"
-        placeholder="🔍 Buscar por nome, CPF/CNPJ, código, e-mail..." />
-        <select [(ngModel)]="tamanho" (ngModelChange)="onFiltro()">
-          <option [ngValue]="10">10 / pág.</option>
-          <option [ngValue]="25">25 / pág.</option>
-          <option [ngValue]="50">50 / pág.</option>
-          <option [ngValue]="100">100 / pág.</option>
-        </select>
-      </div>
-    </div>
-
-    @if (loading) {
-      <div class="empty">Carregando...</div>
-    }
-    @if (!loading && filtrados.length === 0) {
-      <div class="empty">Nenhum cliente encontrado.</div>
-    }
-
-    @if (!loading && filtrados.length > 0) {
-      <table class="table">
-        <thead>
+  @if (!loading && filtrados.length > 0) {
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Nome / Razão Social</th>
+          <th>CPF/CNPJ</th>
+          <th>Código</th>
+          <th>Categoria</th>
+          <th>E-mail</th>
+          <th>Telefone / Celular</th>
+          <th>Limite Crédito</th>
+          <th>Status</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (c of paginados; track c.id) {
           <tr>
-            <th>Nome</th>
-            <th>CPF/CNPJ</th>
-            <th>Código</th>
-            <th>E-mail</th>
-            <th>Limite Crédito</th>
-            <th>Status</th>
-            <th>Ações</th>
+            <td><strong>{{ c.nome }}</strong></td>
+            <td>{{ c.cpfCnpj }}</td>
+            <td>{{ c.codigoCliente }}</td>
+            <td>{{ c.categoria || '—' }}</td>
+            <td>{{ c.emailPrincipal || '—' }}</td>
+            <td>{{ c.celular || c.telefonePrincipal || '—' }}</td>
+            <td>{{ c.limiteCredito | currency:'BRL' }}</td>
+            <td>
+              <span class="badge" [ngClass]="ehAtivo(c) ? 'badge-green' : 'badge-red'">
+                {{ ehAtivo(c) ? 'Ativo' : 'Desativado' }}
+              </span>
+            </td>
+            <td class="actions">
+              <button class="btn btn-sm btn-secondary" (click)="editar(c)">Editar</button>
+              <button
+                class="btn btn-sm"
+                [ngClass]="ehAtivo(c) ? 'btn-warn' : 'btn-success'"
+                (click)="alternarAtivo(c)"
+              >
+                {{ ehAtivo(c) ? 'Desativar' : 'Ativar' }}
+              </button>
+              <button class="btn btn-sm btn-danger" (click)="excluir(c)">Excluir</button>
+            </td>
           </tr>
-        </thead>
-        <tbody>
-          @for (c of paginados; track c) {
-            <tr>
-              <td><strong>{{ c.nome }}</strong></td>
-              <td>{{ c.cpfCnpj }}</td>
-              <td>{{ c.codigoCliente }}</td>
-              <td>{{ c.emailPrincipal || '—' }}</td>
-              <td>{{ c.limiteCredito | currency:'BRL' }}</td>
-              <td>
-                <span class="badge" [ngClass]="c.status === 1 ? 'badge-green' : 'badge-red'">
-                  {{ c.status === 1 ? 'Ativo' : 'Inativo' }}
-                </span>
-              </td>
-              <td class="actions">
-                <button class="btn btn-sm btn-secondary" (click)="editar(c)">Editar</button>
-                <button class="btn btn-sm btn-danger" (click)="excluir(c)">Excluir</button>
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    }
+        }
+      </tbody>
+    </table>
+  }
 
-    @if (!loading && totalPaginas > 1) {
-      <div class="paginacao">
-        <button class="btn btn-sm btn-secondary" [disabled]="pagina <= 1" (click)="irPagina(pagina - 1)">‹ Anterior</button>
-        <span>Página {{ pagina }} de {{ totalPaginas }}</span>
-        <button class="btn btn-sm btn-secondary" [disabled]="pagina >= totalPaginas" (click)="irPagina(pagina + 1)">Próxima ›</button>
-      </div>
-    }
-  </div>
+  @if (!loading && totalPaginas > 1) {
+    <div class="paginacao">
+      <button class="btn btn-sm btn-secondary" [disabled]="pagina <= 1" (click)="irPagina(pagina - 1)">‹ Anterior</button>
+      <span>Página {{ pagina }} de {{ totalPaginas }}</span>
+      <button class="btn btn-sm btn-secondary" [disabled]="pagina >= totalPaginas" (click)="irPagina(pagina + 1)">Próxima ›</button>
+    </div>
+  }
+</div>

@@ -1,3 +1,23 @@
+export interface OpcaoCategoria {
+  id: string;
+  nome: string;
+}
+
+export interface EnderecoCliente {
+  id?: string;
+  cep?: string;
+  pais?: string;
+  uf?: string;
+  cidade?: string;
+  codigoIbge?: string;
+  logradouro?: string;
+  numero?: string;
+  bairro?: string;
+  complemento?: string;
+  categoria?: string;
+  principal?: boolean;
+}
+
 export interface Cliente {
   id: string;
   nome: string;
@@ -5,12 +25,44 @@ export interface Cliente {
   inscricaoEstadual?: string;
   emailPrincipal?: string;
   telefonePrincipal?: string;
+  celular?: string;
   isentoIE: boolean;
   status: number;
+  /** 0 = Ativo, 1 = Desativado */
+  desativado?: number;
   codigoCliente: string;
   limiteCredito: number;
   scoreCredito: number;
   categoria?: string;
+  observacoes?: string;
+
+  // Lista de Endereços (1:N)
+  enderecos?: EnderecoCliente[];
+
+  // Endereço
+  cep?: string;
+  pais?: string;
+  uf?: string;
+  cidade?: string;
+  codigoIbge?: string;
+  logradouro?: string;
+  numero?: string;
+  bairro?: string;
+  complemento?: string;
+  categoriaEndereco?: string;
+  enderecoPrincipal?: boolean;
+
+  // Fiscal
+  inscricaoEstadualProdutorRural?: string;
+  informacoesZonaFranca?: string;
+  regimeFiscal?: string;
+
+  // Pagamentos
+  condicaoPagamentoPadrao?: string;
+  prazoMaximoDias?: number;
+  formasPagamentoAceitas?: string;
+  observacoesPagamento?: string;
+
   dataCadastro: string;
 }
 
@@ -20,10 +72,42 @@ export interface ClienteCreate {
   inscricaoEstadual?: string;
   emailPrincipal?: string;
   telefonePrincipal?: string;
+  celular?: string;
   isentoIE: boolean;
+  status?: number;
+  /** 0 = Ativo, 1 = Desativado */
+  desativado?: number;
   codigoCliente: string;
   limiteCredito: number;
   categoria?: string;
+  observacoes?: string;
+
+  // Lista de Endereços (1:N)
+  enderecos?: EnderecoCliente[];
+
+  // Endereço
+  cep?: string;
+  pais?: string;
+  uf?: string;
+  cidade?: string;
+  codigoIbge?: string;
+  logradouro?: string;
+  numero?: string;
+  bairro?: string;
+  complemento?: string;
+  categoriaEndereco?: string;
+  enderecoPrincipal?: boolean;
+
+  // Fiscal
+  inscricaoEstadualProdutorRural?: string;
+  informacoesZonaFranca?: string;
+  regimeFiscal?: string;
+
+  // Pagamentos
+  condicaoPagamentoPadrao?: string;
+  prazoMaximoDias?: number;
+  formasPagamentoAceitas?: string;
+  observacoesPagamento?: string;
 }
 
 export interface Fornecedor {
@@ -33,11 +117,49 @@ export interface Fornecedor {
   inscricaoEstadual?: string;
   emailPrincipal?: string;
   telefonePrincipal?: string;
+  celular?: string;
   isentoIE: boolean;
   status: number;
+  /** 0 = Ativo, 1 = Desativado */
+  desativado?: number;
   codigoFornecedor: string;
   prazoEntregaPadrao?: string;
   categoria?: string;
+  observacoes?: string;
+
+  // Lista de Endereços (1:N)
+  enderecos?: EnderecoCliente[];
+
+  // Endereço principal resumido
+  cep?: string;
+  pais?: string;
+  uf?: string;
+  cidade?: string;
+  codigoIbge?: string;
+  logradouro?: string;
+  numero?: string;
+  bairro?: string;
+  complemento?: string;
+  categoriaEndereco?: string;
+  enderecoPrincipal?: boolean;
+
+  // 03 — Fiscal
+  inscricaoMunicipal?: string;
+  regimeTributario?: string;
+  indicadorIE?: string;
+  configuracoesRetencao?: string;
+
+  // 04 — Pagamentos
+  condicoesAcordadas?: string;
+  formasPagamentoFornecedor?: string;
+  contasBancariasTexto?: string;
+  chavePixFornecedor?: string;
+
+  // 05 — Compras
+  pedidoMinimo?: number;
+  frete?: string;
+  contatosComerciais?: string;
+
   dataCadastro: string;
 }
 
@@ -47,10 +169,48 @@ export interface FornecedorCreate {
   inscricaoEstadual?: string;
   emailPrincipal?: string;
   telefonePrincipal?: string;
+  celular?: string;
   isentoIE: boolean;
+  status?: number;
+  /** 0 = Ativo, 1 = Desativado */
+  desativado?: number;
   codigoFornecedor: string;
   prazoEntregaPadrao?: string;
   categoria?: string;
+  observacoes?: string;
+
+  // Lista de Endereços (1:N)
+  enderecos?: EnderecoCliente[];
+
+  // Endereço principal resumido
+  cep?: string;
+  pais?: string;
+  uf?: string;
+  cidade?: string;
+  codigoIbge?: string;
+  logradouro?: string;
+  numero?: string;
+  bairro?: string;
+  complemento?: string;
+  categoriaEndereco?: string;
+  enderecoPrincipal?: boolean;
+
+  // 03 — Fiscal
+  inscricaoMunicipal?: string;
+  regimeTributario?: string;
+  indicadorIE?: string;
+  configuracoesRetencao?: string;
+
+  // 04 — Pagamentos
+  condicoesAcordadas?: string;
+  formasPagamentoFornecedor?: string;
+  contasBancariasTexto?: string;
+  chavePixFornecedor?: string;
+
+  // 05 — Compras
+  pedidoMinimo?: number;
+  frete?: string;
+  contatosComerciais?: string;
 }
 
 export interface Produto {
@@ -58,12 +218,28 @@ export interface Produto {
   codigo: string;
   codigoBarras?: string;
   descricao: string;
+  descricaoComplementar?: string;
   tipo: number;
+  tipoProdutoId?: string;
+  tipoProdutoNome?: string;
   ncm?: string;
   cest?: string;
   cfop?: string;
+  origemMercadoria: number;
+  unidadeTributavelId?: string;
+  unidadeTributavelSigla?: string;
   precoVendaPadrao: number;
   precoCustoMedio: number;
+  margem: number;
+  precoMinimo: number;
+  unidadeVendaId?: string;
+  unidadeVendaNome?: string;
+  origemAbastecimentoId?: string;
+  origemAbastecimentoNome?: string;
+  prazoFabricacaoDias: number;
+  rendimento: number;
+  percentualPerda: number;
+  permiteUsoEmBom: boolean;
   ativo: boolean;
   unidadeMedidaId: string;
   unidadeMedidaSigla?: string;
@@ -76,21 +252,53 @@ export interface Produto {
   qtdComponentes: number;
   qtdProcessos: number;
   margemPercentual?: number | null;
+  custoComponentes?: number;
+  custoTotal?: number;
+  itensComposicao?: ProdutoComposicaoItem[];
+}
+
+export interface ProdutoComposicaoItem {
+  componenteId: string;
+  codigo: string;
+  codigoBarras?: string;
+  descricao: string;
+  unidadeMedidaSigla?: string;
+  quantidade: number;
+  valorCustoReferencia: number;
+  subtotal: number;
+}
+
+export interface ProdutoComposicaoInput {
+  componenteId: string;
+  quantidade: number;
 }
 
 export interface ProdutoCreate {
   codigo: string;
   codigoBarras?: string;
   descricao: string;
+  descricaoComplementar?: string;
   tipo: number;
+  tipoProdutoId?: string | null;
   ncm?: string;
   cest?: string;
   cfop?: string;
+  origemMercadoria: number;
+  unidadeTributavelId?: string | null;
   precoVendaPadrao: number;
   precoCustoMedio: number;
+  margem: number;
+  precoMinimo: number;
+  unidadeVendaId?: string | null;
+  origemAbastecimentoId?: string | null;
+  prazoFabricacaoDias: number;
+  rendimento: number;
+  percentualPerda: number;
+  permiteUsoEmBom: boolean;
   ativo: boolean;
   unidadeMedidaId: string | null;
   familiaProdutoId: string | null;
+  itensComposicao?: ProdutoComposicaoInput[];
 }
 
 export interface UnidadeMedida {

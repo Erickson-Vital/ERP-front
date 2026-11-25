@@ -1,38 +1,111 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { ApiService } from '../../core/api.service';
-import { Fornecedor, FornecedorCreate } from '../../core/models';
-import { filtrarPor, paginar, totalPaginas } from '../../core/paginacao';
+import { Fornecedor } from '../../core/models';
+import { paginar, totalPaginas } from '../../core/paginacao';
 
 @Component({
-    selector: 'app-fornecedores',
-    imports: [CommonModule, FormsModule],
-    templateUrl: './fornecedores.component.html',
-    styleUrl: './fornecedores.component.css'
+  selector: 'app-fornecedores',
+  imports: [CommonModule, FormsModule],
+  templateUrl: './fornecedores.component.html',
+  styleUrl: './fornecedores.component.css'
 })
 export class FornecedoresComponent implements OnInit {
   fornecedores: Fornecedor[] = [];
   loading = false;
   error = '';
-  editando: Fornecedor | null = null;
-  form: FornecedorCreate = this.blankForm();
 
-  // Filtro e paginação
-  filtro = '';
+  // Campos digitados no 1º card de filtros
+  filtroTexto = '';
+  filtroCategoria = '';
+  filtroStatus: '' | '0' | '1' = '';
+
+  // Filtros efetivamente aplicados ao clicar em "Aplicar Filtro"
+  filtroAplicadoTexto = '';
+  filtroAplicadoCategoria = '';
+  filtroAplicadoStatus: '' | '0' | '1' = '';
+
   pagina = 1;
   tamanho = 10;
-  get filtrados(): Fornecedor[] {
-    return filtrarPor(this.fornecedores, this.filtro, [f => f.nome, f => f.cpfCnpj, f => f.codigoFornecedor, f => f.emailPrincipal, f => f.categoria]);
+
+  categoriasBanco: string[] = [];
+
+  get categoriasDisponiveis(): string[] {
+    const doBanco = this.fornecedores.map(f => f.categoria).filter((c): c is string => !!c);
+    return Array.from(new Set([...this.categoriasBanco, ...doBanco]));
   }
+
+  get filtrados(): Fornecedor[] {
+    const termo = (this.filtroAplicadoTexto || '').trim().toLowerCase();
+    const cat = (this.filtroAplicadoCategoria || '').trim().toLowerCase();
+    const st = this.filtroAplicadoStatus;
+
+    return this.fornecedores.filter(f => {
+      if (termo) {
+        const matchTexto =
+          (f.nome || '').toLowerCase().includes(termo) ||
+          (f.cpfCnpj || '').toLowerCase().includes(termo) ||
+          (f.codigoFornecedor || '').toLowerCase().includes(termo) ||
+          (f.emailPrincipal || '').toLowerCase().includes(termo) ||
+          (f.telefonePrincipal || '').toLowerCase().includes(termo) ||
+          (f.celular || '').toLowerCase().includes(termo) ||
+          (f.cidade || '').toLowerCase().includes(termo);
+        if (!matchTexto) return false;
+      }
+
+      if (cat && (f.categoria || '').toLowerCase() !== cat) {
+        return false;
+      }
+
+      if (st === '0' && !this.ehAtivo(f)) return false;
+      if (st === '1' && this.ehAtivo(f)) return false;
+
+      return true;
+    });
+  }
+
   get paginados(): Fornecedor[] { return paginar(this.filtrados, this.pagina, this.tamanho); }
   get totalPaginas(): number { return totalPaginas(this.filtrados.length, this.tamanho); }
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService, private router: Router) {}
 
-  ngOnInit() { this.load(); }
+  ngOnInit() {
+    this.load();
+    this.api.getOpcoesCategoria('fornecedores').subscribe({
+      next: (d) => { this.categoriasBanco = d.map(x => x.nome); }
+    });
+  }
 
-  onFiltro() { this.pagina = 1; }
+  ehAtivo(f: Fornecedor): boolean {
+    if (f.desativado !== undefined && f.desativado !== null) {
+      return f.desativado === 0;
+    }
+    return f.status !== 2;
+  }
+
+  aplicarFiltro() {
+    this.filtroAplicadoTexto = this.filtroTexto;
+    this.filtroAplicadoCategoria = this.filtroCategoria;
+    this.filtroAplicadoStatus = this.filtroStatus;
+    this.pagina = 1;
+  }
+
+  limparFiltro() {
+    this.filtroTexto = '';
+    this.filtroCategoria = '';
+    this.filtroStatus = '';
+    this.filtroAplicadoTexto = '';
+    this.filtroAplicadoCategoria = '';
+    this.filtroAplicadoStatus = '';
+    this.pagina = 1;
+  }
+
+  onTamanhoChange() {
+    this.pagina = 1;
+  }
+
   irPagina(p: number) { if (p >= 1 && p <= this.totalPaginas) this.pagina = p; }
 
   load() {
@@ -43,36 +116,27 @@ export class FornecedoresComponent implements OnInit {
     });
   }
 
-  blankForm(): FornecedorCreate {
-    return { nome: '', cpfCnpj: '', codigoFornecedor: '', isentoIE: false };
+  novoFornecedor() {
+    this.router.navigate(['/fornecedores/novo']);
   }
-
-  novo() { this.editando = null; this.form = this.blankForm(); this.error = ''; }
 
   editar(f: Fornecedor) {
-    this.editando = f;
-    this.error = '';
-    this.form = {
-      nome: f.nome, cpfCnpj: f.cpfCnpj, inscricaoEstadual: f.inscricaoEstadual,
-      emailPrincipal: f.emailPrincipal, telefonePrincipal: f.telefonePrincipal,
-      isentoIE: f.isentoIE, codigoFornecedor: f.codigoFornecedor,
-      prazoEntregaPadrao: f.prazoEntregaPadrao, categoria: f.categoria
-    };
+    this.router.navigate(['/fornecedores', f.id, 'editar']);
   }
 
-  salvar() {
+  alternarAtivo(f: Fornecedor) {
     this.error = '';
-    if (this.editando) {
-      this.api.updateFornecedor(this.editando.id, this.form).subscribe({
-        next: () => { this.editando = null; this.load(); },
-        error: () => { this.error = 'Erro ao salvar fornecedor.'; }
-      });
-    } else {
-      this.api.createFornecedor(this.form).subscribe({
-        next: () => { this.editando = null; this.load(); },
-        error: () => { this.error = 'Erro ao salvar fornecedor.'; }
-      });
-    }
+    const novoDesativado = this.ehAtivo(f) ? 1 : 0;
+    this.api.alterarStatusFornecedor(f.id, novoDesativado).subscribe({
+      next: (atualizado) => {
+        f.desativado = atualizado?.desativado ?? novoDesativado;
+        f.status = atualizado?.status ?? (novoDesativado === 1 ? 2 : 1);
+        this.fornecedores = [...this.fornecedores];
+      },
+      error: () => {
+        this.error = 'Erro ao alterar o status do fornecedor.';
+      }
+    });
   }
 
   excluir(f: Fornecedor) {

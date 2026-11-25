@@ -21,16 +21,52 @@ export const routes: Routes = [
     loadComponent: () => import('./features/clientes/clientes.component').then(m => m.ClientesComponent)
   },
   {
+    path: 'clientes/novo',
+    canActivate: guard,
+    data: { menu: 'clientes' },
+    loadComponent: () => import('./features/clientes/cliente-form.component').then(m => m.ClienteFormComponent)
+  },
+  {
+    path: 'clientes/:id/editar',
+    canActivate: guard,
+    data: { menu: 'clientes' },
+    loadComponent: () => import('./features/clientes/cliente-form.component').then(m => m.ClienteFormComponent)
+  },
+  {
     path: 'fornecedores',
     canActivate: guard,
     data: { menu: 'fornecedores' },
     loadComponent: () => import('./features/fornecedores/fornecedores.component').then(m => m.FornecedoresComponent)
   },
   {
+    path: 'fornecedores/novo',
+    canActivate: guard,
+    data: { menu: 'fornecedores' },
+    loadComponent: () => import('./features/fornecedores/fornecedor-form.component').then(m => m.FornecedorFormComponent)
+  },
+  {
+    path: 'fornecedores/:id/editar',
+    canActivate: guard,
+    data: { menu: 'fornecedores' },
+    loadComponent: () => import('./features/fornecedores/fornecedor-form.component').then(m => m.FornecedorFormComponent)
+  },
+  {
     path: 'produtos',
     canActivate: guard,
     data: { menu: 'produtos' },
     loadComponent: () => import('./features/produtos/produtos.component').then(m => m.ProdutosComponent)
+  },
+  {
+    path: 'produtos/novo',
+    canActivate: guard,
+    data: { menu: 'produtos' },
+    loadComponent: () => import('./features/produtos/produto-form.component').then(m => m.ProdutoFormComponent)
+  },
+  {
+    path: 'produtos/:id/editar',
+    canActivate: guard,
+    data: { menu: 'produtos' },
+    loadComponent: () => import('./features/produtos/produto-form.component').then(m => m.ProdutoFormComponent)
   },
   {
     path: 'processos',

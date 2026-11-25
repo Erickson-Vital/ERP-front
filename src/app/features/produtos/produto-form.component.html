@@ -1,0 +1,535 @@
+<div class="card">
+  <div class="card-header">
+    <div>
+      <h2>{{ produtoId ? 'Editar Produto' : 'Novo Produto' }}</h2>
+      <p class="subtitulo">Preencha os dados do produto navegando pelas abas abaixo.</p>
+    </div>
+    <button type="button" class="btn btn-secondary" (click)="voltar()">← Voltar para a Lista</button>
+  </div>
+
+  @if (error) {
+    <div class="alert alert-error">{{ error }}</div>
+  }
+  @if (sucesso) {
+    <div class="alert alert-success">{{ sucesso }}</div>
+  }
+
+  @if (loading) {
+    <div class="empty">Carregando dados do produto...</div>
+  } @else {
+    <!-- BARRA DE ABAS -->
+    <div class="tabs-bar">
+      <button type="button" class="tab-btn" [class.active]="abaAtiva === 'geral'" (click)="abaAtiva = 'geral'">
+        01. GERAL
+      </button>
+      <button type="button" class="tab-btn" [class.active]="abaAtiva === 'fiscal'" (click)="abaAtiva = 'fiscal'">
+        02. FISCAL
+      </button>
+      <button type="button" class="tab-btn" [class.active]="abaAtiva === 'comercial'" (click)="abaAtiva = 'comercial'">
+        03. COMERCIAL
+      </button>
+      <button type="button" class="tab-btn" [class.active]="abaAtiva === 'producao'" (click)="abaAtiva = 'producao'">
+        04. PRODUÇÃO
+      </button>
+      <button type="button" class="tab-btn" [class.active]="abaAtiva === 'composicao'" (click)="abaAtiva = 'composicao'">
+        05. COMPOSIÇÃO ({{ itensComposicao.length }})
+      </button>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 01. ABA: GERAL                             -->
+    <!-- ========================================== -->
+    @if (abaAtiva === 'geral') {
+      <div class="tab-content">
+        <!-- Barra de Status Ativo / Inativo -->
+        <div class="status-banner" [class.inativo]="!produtoAtivo">
+          <div class="status-info">
+            <span class="badge" [ngClass]="produtoAtivo ? 'badge-green' : 'badge-red'">
+              {{ produtoAtivo ? 'PRODUTO ATIVO' : 'PRODUTO INATIVO' }}
+            </span>
+            <span class="status-desc">
+              {{ produtoAtivo ? 'Este produto está ativo para vendas e operações.' : 'Este produto está desativado no sistema.' }}
+            </span>
+          </div>
+          <button
+            type="button"
+            class="btn btn-sm"
+            [ngClass]="produtoAtivo ? 'btn-danger' : 'btn-success'"
+            (click)="alternarAtivoProduto()"
+          >
+            {{ produtoAtivo ? '🚫 Desativar Produto' : '✅ Ativar Produto' }}
+          </button>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Código *</label>
+            <input [(ngModel)]="form.codigo" placeholder="P001" />
+          </div>
+
+          <div class="form-group">
+            <label>Código de Barras</label>
+            <input [(ngModel)]="form.codigoBarras" placeholder="EAN / GTIN" />
+          </div>
+
+          <div class="form-group span-2">
+            <label>Descrição *</label>
+            <input [(ngModel)]="form.descricao" placeholder="Descrição do produto" />
+          </div>
+
+          <div class="form-group span-full">
+            <label>Descrição Complementar</label>
+            <textarea rows="2" [(ngModel)]="form.descricaoComplementar"
+              placeholder="Detalhes adicionais, especificações ou observações do produto..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Tipo</label>
+            <div class="select-with-gear">
+              <select [(ngModel)]="form.tipoProdutoId" (ngModelChange)="onTipoChange()">
+                <option value="">Selecione...</option>
+                @for (t of tiposCadastro; track t.id) {
+                  <option [value]="t.id">{{ t.nome }}</option>
+                }
+              </select>
+              <button type="button" class="btn-gear" title="Gerenciar Tipos de Produto" (click)="abrirModal('tipo')">
+                ⚙️
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Unidade de Medida *</label>
+            <div class="select-with-gear">
+              <select [(ngModel)]="form.unidadeMedidaId">
+                <option value="">Selecione...</option>
+                @for (u of unidades; track u.id) {
+                  <option [value]="u.id">{{ u.sigla }} - {{ u.descricao }}</option>
+                }
+              </select>
+              <button type="button" class="btn-gear" title="Gerenciar Unidades de Medida" (click)="abrirModal('unidade')">
+                ⚙️
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Família *</label>
+            <div class="select-with-gear">
+              <select [(ngModel)]="form.familiaProdutoId">
+                <option value="">Selecione...</option>
+                @for (f of familias; track f.id) {
+                  <option [value]="f.id">{{ f.nome }}</option>
+                }
+              </select>
+              <button type="button" class="btn-gear" title="Gerenciar Famílias de Produto" (click)="abrirModal('familia')">
+                ⚙️
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group checkbox">
+            <input type="checkbox" id="ativo" [(ngModel)]="form.ativo" />
+            <label for="ativo">Ativo</label>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- ========================================== -->
+    <!-- 02. ABA: FISCAL                            -->
+    <!-- ========================================== -->
+    @if (abaAtiva === 'fiscal') {
+      <div class="tab-content">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>NCM</label>
+            <input [(ngModel)]="form.ncm" placeholder="0000.00.00" maxlength="20" />
+          </div>
+
+          <div class="form-group">
+            <label>CEST</label>
+            <input [(ngModel)]="form.cest" placeholder="00.000.00" maxlength="20" />
+          </div>
+
+          <div class="form-group span-full">
+            <label>Origem da Mercadoria</label>
+            <div class="select-with-gear">
+              <select [(ngModel)]="form.origemMercadoria">
+                @for (o of origensMercadoria; track o.valor) {
+                  <option [ngValue]="o.valor">{{ o.valor }} - {{ o.label }}</option>
+                }
+              </select>
+              <button type="button" class="btn-gear" title="Gerenciar Origens da Mercadoria" (click)="abrirModal('origemMercadoria')">
+                ⚙️
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Unidade Tributável</label>
+            <div class="select-with-gear">
+              <select [(ngModel)]="form.unidadeTributavelId">
+                <option value="">Selecione...</option>
+                @for (u of unidades; track u.id) {
+                  <option [value]="u.id">{{ u.sigla }} - {{ u.descricao }}</option>
+                }
+              </select>
+              <button type="button" class="btn-gear" title="Gerenciar Unidades Tributáveis" (click)="abrirModal('unidadeTributavel')">
+                ⚙️
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- ========================================== -->
+    <!-- 03. ABA: COMERCIAL                         -->
+    <!-- ========================================== -->
+    @if (abaAtiva === 'comercial') {
+      <div class="tab-content">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Preço de Venda Referência (R$)</label>
+            <input [(ngModel)]="form.precoVendaPadrao" type="number" step="0.01" min="0" placeholder="0,00" />
+          </div>
+
+          <div class="form-group">
+            <label>Custo de Referência (R$)</label>
+            <input [(ngModel)]="form.precoCustoMedio" type="number" step="0.01" min="0" placeholder="0,00" />
+          </div>
+
+          <div class="form-group custo-total-group">
+            <label>Custo Total (R$)</label>
+            <input
+              class="input-custo-total"
+              [value]="custoTotalCalculado | currency:'BRL'"
+              readonly
+              title="Soma dos produtos inseridos na aba Composição + Custo de Referência"
+            />
+            <span class="custo-total-hint">
+              Composição: {{ custoComponentes | currency:'BRL' }} + Custo Ref.: {{ (form.precoCustoMedio || 0) | currency:'BRL' }}
+            </span>
+          </div>
+
+          <div class="form-group">
+            <label>Margem (%)</label>
+            <input [(ngModel)]="form.margem" type="number" step="0.01" placeholder="0,00" />
+          </div>
+
+          <div class="form-group">
+            <label>Preço Mínimo (R$)</label>
+            <input [(ngModel)]="form.precoMinimo" type="number" step="0.01" min="0" placeholder="0,00" />
+          </div>
+
+          <div class="form-group">
+            <label>Unidade de Venda</label>
+            <div class="select-with-gear">
+              <select [(ngModel)]="form.unidadeVendaId">
+                <option value="">Selecione...</option>
+                @for (u of unidadesVendaList; track u.id) {
+                  <option [value]="u.id">{{ u.nome }}</option>
+                }
+              </select>
+              <button type="button" class="btn-gear" title="Gerenciar Unidades de Venda" (click)="abrirModal('unidadeVenda')">
+                ⚙️
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- ========================================== -->
+    <!-- 04. ABA: PRODUÇÃO                          -->
+    <!-- ========================================== -->
+    @if (abaAtiva === 'producao') {
+      <div class="tab-content">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Origem de Abastecimento</label>
+            <div class="select-with-gear">
+              <select [(ngModel)]="form.origemAbastecimentoId">
+                <option value="">Selecione...</option>
+                @for (o of origensAbastecimentoList; track o.id) {
+                  <option [value]="o.id">{{ o.nome }}</option>
+                }
+              </select>
+              <button type="button" class="btn-gear" title="Gerenciar Origens de Abastecimento" (click)="abrirModal('origemAbastecimento')">
+                ⚙️
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Prazo de Fabricação (dias)</label>
+            <input [(ngModel)]="form.prazoFabricacaoDias" type="number" min="0" placeholder="0" />
+          </div>
+
+          <div class="form-group">
+            <label>Rendimento</label>
+            <input [(ngModel)]="form.rendimento" type="number" step="0.0001" min="0" placeholder="0,0000" />
+          </div>
+
+          <div class="form-group">
+            <label>Percentual de Perda (%)</label>
+            <input [(ngModel)]="form.percentualPerda" type="number" step="0.01" min="0" placeholder="0,00" />
+          </div>
+
+          <div class="form-group checkbox">
+            <input type="checkbox" id="permiteBom" [(ngModel)]="form.permiteUsoEmBom" />
+            <label for="permiteBom">Permite Utilização em BOM</label>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- ========================================== -->
+    <!-- 05. ABA: COMPOSIÇÃO                        -->
+    <!-- ========================================== -->
+    @if (abaAtiva === 'composicao') {
+      <div class="tab-content">
+        <div class="composicao-header">
+          <div>
+            <h3>Produtos Inseridos na Composição</h3>
+            <p class="composicao-subtitulo">
+              Inclua outros produtos que compõem este item. O somatório será somado ao Custo de Referência na aba Comercial.
+            </p>
+          </div>
+          <button type="button" class="btn" (click)="abrirModalProdutos()">
+            + Adicionar Outros Produtos
+          </button>
+        </div>
+
+        @if (itensComposicao.length === 0) {
+          <div class="empty">
+            Nenhum produto inserido na composição ainda. Clique em <strong>+ Adicionar Outros Produtos</strong> para incluir.
+          </div>
+        } @else {
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Descrição</th>
+                <th>Quantidade</th>
+                <th>Valor Custo Referência</th>
+                <th>Subtotal</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of itensComposicao; track item.componenteId; let i = $index) {
+                <tr>
+                  <td><strong>{{ item.codigo }}</strong></td>
+                  <td>
+                    <strong>{{ item.descricao }}</strong>
+                    @if (item.unidadeMedidaSigla) {
+                      <span class="badge badge-gray" style="margin-left: 6px;">{{ item.unidadeMedidaSigla }}</span>
+                    }
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      class="input-qtd-tabela"
+                      min="0.0001"
+                      step="any"
+                      [(ngModel)]="item.quantidade"
+                      (ngModelChange)="atualizarQuantidadeItem(item)"
+                    />
+                  </td>
+                  <td>{{ item.valorCustoReferencia | currency:'BRL' }}</td>
+                  <td><strong>{{ (item.quantidade * item.valorCustoReferencia) | currency:'BRL' }}</strong></td>
+                  <td class="actions">
+                    <button type="button" class="btn btn-sm btn-danger" (click)="removerItemComposicao(i)">
+                      Remover
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+            <tfoot>
+              <tr class="tfoot-soma">
+                <td colspan="4" style="text-align: right;">Total dos Produtos Inseridos:</td>
+                <td class="valor-destaque">{{ custoComponentes | currency:'BRL' }}</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        }
+      </div>
+    }
+
+    <!-- RODAPÉ DE AÇÕES -->
+    <div class="form-actions footer-actions">
+      <button type="button" class="btn" [disabled]="salvando" (click)="salvar()">
+        💾 {{ salvando ? 'Salvando...' : (produtoId ? 'Atualizar Produto' : 'Salvar Produto') }}
+      </button>
+      <button type="button" class="btn btn-secondary" [disabled]="salvando" (click)="voltar()">
+        Cancelar
+      </button>
+    </div>
+  }
+</div>
+
+<!-- =================================================================== -->
+<!-- POP-UP (MODAL) DA ENGRENAGEM PARA GERENCIAR AS LISTAS DEDICADAS     -->
+<!-- =================================================================== -->
+@if (modalAberto) {
+  <div class="modal-backdrop" (click)="fecharModalOpcoes()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>⚙️ Gerenciar {{ modalTitulo }}</h3>
+        <button type="button" class="btn-close" (click)="fecharModalOpcoes()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="nova-opcao-row">
+          <input
+            [(ngModel)]="novoItemTexto"
+            (keyup.enter)="adicionarOpcaoModal()"
+            placeholder="Adicionar novo item..."
+          />
+          <button type="button" class="btn btn-sm" (click)="adicionarOpcaoModal()">+ Adicionar</button>
+        </div>
+
+        @if (modalItens.length === 0) {
+          <div class="empty-modal">Nenhuma opção cadastrada.</div>
+        } @else {
+          <ul class="lista-opcoes">
+            @for (item of modalItens; track $index; let i = $index) {
+              <li class="opcao-item">
+                @if (editandoIndex === i) {
+                  <input
+                    class="input-edicao"
+                    [(ngModel)]="editandoTexto"
+                    (keyup.enter)="salvarEdicaoOpcao(i)"
+                  />
+                  <div class="opcao-acoes">
+                    <button type="button" class="btn btn-sm btn-success" (click)="salvarEdicaoOpcao(i)">Salvar</button>
+                    <button type="button" class="btn btn-sm btn-secondary" (click)="cancelarEdicaoOpcao()">Cancelar</button>
+                  </div>
+                } @else {
+                  <span class="opcao-nome">{{ item }}</span>
+                  <div class="opcao-acoes">
+                    <button type="button" class="btn btn-sm btn-secondary" (click)="iniciarEdicaoOpcao(i)">Editar</button>
+                    <button type="button" class="btn btn-sm btn-danger" (click)="removerOpcaoModal(i)">Excluir</button>
+                  </div>
+                }
+              </li>
+            }
+          </ul>
+        }
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="fecharModalOpcoes()">Fechar</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- =================================================================== -->
+<!-- POP-UP (MODAL) PARA PESQUISAR E INSERIR OUTROS PRODUTOS             -->
+<!-- =================================================================== -->
+@if (modalProdutosAberto) {
+  <div class="modal-backdrop" (click)="fecharModalProdutos()">
+    <div class="modal-box modal-box-lg" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>📦 Adicionar Outros Produtos</h3>
+        <button type="button" class="btn-close" (click)="fecharModalProdutos()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="busca-produto-box">
+          <label>Pesquisar Produto (Código, Código de Barras ou Descrição)</label>
+          <input
+            [(ngModel)]="buscaProdutoTermo"
+            placeholder="Digite o código, código de barras ou descrição para filtrar..."
+            autofocus
+          />
+        </div>
+
+        @if (produtosFiltradosModal.length === 0) {
+          <div class="empty-modal">Nenhum produto encontrado para "{{ buscaProdutoTermo }}".</div>
+        } @else {
+          <div class="lista-produtos-modal">
+            <table class="table tabela-modal">
+              <thead>
+                <tr>
+                  <th style="width: 42px;">Sel.</th>
+                  <th>Código</th>
+                  <th>Descrição</th>
+                  <th>Custo Referência</th>
+                  <th style="width: 110px;">Quantidade</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (p of produtosFiltradosModal; track p.id) {
+                  <tr
+                    class="linha-selecionavel"
+                    [class.linha-selecionada]="estaSelecionadoNoModal(p.id)"
+                    (click)="alternarSelecaoProdutoModal(p)"
+                  >
+                    <td (click)="$event.stopPropagation()">
+                      <input
+                        type="checkbox"
+                        [checked]="estaSelecionadoNoModal(p.id)"
+                        (change)="alternarSelecaoProdutoModal(p)"
+                      />
+                    </td>
+                    <td>
+                      <strong>{{ p.codigo }}</strong>
+                      @if (p.codigoBarras) {
+                        <div class="cod-barras-sub">EAN: {{ p.codigoBarras }}</div>
+                      }
+                    </td>
+                    <td>
+                      <strong>{{ p.descricao }}</strong>
+                      @if (p.unidadeMedidaSigla) {
+                        <span class="badge badge-gray" style="margin-left: 6px;">{{ p.unidadeMedidaSigla }}</span>
+                      }
+                      @if (jaInseridoNaComposicao(p.id)) {
+                        <span class="badge badge-green" style="margin-left: 6px;">Já inserido</span>
+                      }
+                    </td>
+                    <td>{{ custoUnitarioProduto(p) | currency:'BRL' }}</td>
+                    <td (click)="$event.stopPropagation()">
+                      <input
+                        type="number"
+                        class="input-qtd-modal"
+                        min="0.0001"
+                        step="any"
+                        [ngModel]="quantidadesTempModal[p.id] || 1"
+                        (ngModelChange)="onQuantidadeModalChange(p, $event)"
+                      />
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+
+      <div class="modal-footer modal-footer-between">
+        <span class="resumo-selecao">
+          {{ qtdSelecionadosModal }} produto(s) selecionado(s) para inserir
+        </span>
+        <div class="modal-footer-btns">
+          <button type="button" class="btn btn-secondary" (click)="fecharModalProdutos()">
+            Cancelar
+          </button>
+          <button
+            type="button"
+            class="btn"
+            [disabled]="qtdSelecionadosModal === 0"
+            (click)="inserirProdutosSelecionados()"
+          >
+            Inserir
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
