@@ -1,188 +1,140 @@
+<!-- 1º CARD: FILTROS DE PESQUISA E BOTÕES DE AÇÃO -->
 <div class="card">
   <div class="card-header">
-    <h2>{{ editando ? 'Editar Produto' : 'Novo Produto' }}</h2>
+    <h2>🔍 Filtros de Pesquisa — Produtos</h2>
+    <button class="btn" (click)="novoProduto()">+ Adicionar Novo Produto</button>
+  </div>
+
+  <div class="form-grid">
+    <div class="form-group">
+      <label>Buscar (Código, Descrição, Código de Barras, Família, NCM)</label>
+      <input
+        [(ngModel)]="filtroTexto"
+        (keyup.enter)="aplicarFiltro()"
+        placeholder="Digite para pesquisar..."
+      />
+    </div>
+
+    <div class="form-group">
+      <label>Família</label>
+      <select [(ngModel)]="filtroFamilia">
+        <option value="">Todas as famílias</option>
+        @for (f of familias; track f.id) {
+          <option [value]="f.id">{{ f.nome }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Tipo</label>
+      <select [(ngModel)]="filtroTipo">
+        <option value="">Todos os tipos</option>
+        @for (t of tipos; track t.valor) {
+          <option [value]="t.valor">{{ t.label }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Status</label>
+      <select [(ngModel)]="filtroStatus">
+        <option value="">Todos</option>
+        <option value="0">Ativo</option>
+        <option value="1">Inativo</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="form-actions">
+    <button class="btn" (click)="aplicarFiltro()">🔍 Filtrar</button>
+    <button class="btn btn-secondary" (click)="limparFiltro()">Limpar Filtro</button>
+  </div>
+</div>
+
+<!-- 2º CARD: TABELA DE CONSULTA DE PRODUTOS -->
+<div class="card">
+  <div class="card-header">
+    <h2>Produtos ({{ filtrados.length }})</h2>
+    <div class="filtros">
+      <select [(ngModel)]="tamanho" (ngModelChange)="onTamanhoChange()">
+        <option [ngValue]="10">10 / pág.</option>
+        <option [ngValue]="25">25 / pág.</option>
+        <option [ngValue]="50">50 / pág.</option>
+        <option [ngValue]="100">100 / pág.</option>
+      </select>
+    </div>
   </div>
 
   @if (error) {
     <div class="alert alert-error">{{ error }}</div>
   }
 
-  <div class="form-grid">
-    <div class="form-group">
-      <label>Código *</label>
-      <input [(ngModel)]="form.codigo" placeholder="P001" />
-    </div>
-    <div class="form-group">
-      <label>Código de Barras</label>
-      <input [(ngModel)]="form.codigoBarras" />
-    </div>
-    <div class="form-group">
-      <label>Descrição *</label>
-      <input [(ngModel)]="form.descricao" />
-    </div>
-    <div class="form-group">
-      <label>Tipo</label>
-      <select [(ngModel)]="form.tipo">
-        @for (t of tipos; track t) {
-          <option [ngValue]="t.valor">{{ t.label }}</option>
-        }
-      </select>
-    </div>
-    <div class="form-group">
-      <label>Unidade de Medida</label>
-      <select [(ngModel)]="form.unidadeMedidaId">
-        <option value="">— Selecione —</option>
-        @for (u of unidades; track u) {
-          <option [value]="u.id">{{ u.sigla }} - {{ u.descricao }}</option>
-        }
-      </select>
-    </div>
-    <div class="form-group">
-      <label>Família</label>
-      <select [(ngModel)]="form.familiaProdutoId">
-        <option value="">— Selecione —</option>
-        @for (f of familias; track f) {
-          <option [value]="f.id">{{ f.nome }}</option>
-        }
-      </select>
-    </div>
-    <div class="form-group">
-      <label>Preço de Venda (R$)</label>
-      <input [(ngModel)]="form.precoVendaPadrao" type="number" step="0.01" />
-    </div>
-    <div class="form-group">
-      <label>Preço de Custo (R$)</label>
-      <input [(ngModel)]="form.precoCustoMedio" type="number" step="0.01" />
-    </div>
-    <div class="form-group">
-      <label>NCM</label>
-      <input [(ngModel)]="form.ncm" />
-    </div>
-    <div class="form-group">
-      <label>CEST</label>
-      <input [(ngModel)]="form.cest" />
-    </div>
-    <div class="form-group">
-      <label>CFOP</label>
-      <input [(ngModel)]="form.cfop" />
-    </div>
-    <div class="form-group">
-      <label>Ativo</label>
-      <select [(ngModel)]="form.ativo">
-        <option [ngValue]="true">Sim</option>
-        <option [ngValue]="false">Não</option>
-      </select>
-    </div>
-  </div>
-
-  @if (form.tipo === 4) {
-    <div class="aviso-kit">
-      <strong>Kit (produto composto)</strong> — depois de salvar, acesse o menu <strong>BOM</strong>
-      para informar os <em>materiais/componentes</em> e os <em>processos</em> usados na montagem.
-      O custo é calculado automaticamente e o estoque é controlado pelos componentes.
-    </div>
+  @if (loading) {
+    <div class="empty">Carregando...</div>
+  }
+  @if (!loading && filtrados.length === 0) {
+    <div class="empty">Nenhum produto encontrado com os filtros aplicados.</div>
   }
 
-  <div class="form-actions">
-    <button class="btn" (click)="salvar()">💾 {{ editando ? 'Atualizar' : 'Salvar' }}</button>
-    <button class="btn btn-secondary" (click)="novo()">Limpar</button>
-  </div>
-</div>
-
-<div class="card">
-  <div class="card-header">
-    <h2>Produtos ({{ totalFiltrados }})</h2>
-    <div class="filtros">
-      <input class="filtro-input" [(ngModel)]="filtro" (ngModelChange)="onFiltro()"
-        placeholder="🔍 Buscar por código, descrição ou família..." />
-        <select [(ngModel)]="tamanho" (ngModelChange)="onFiltro()">
-          <option [ngValue]="10">10 / pág.</option>
-          <option [ngValue]="25">25 / pág.</option>
-          <option [ngValue]="50">50 / pág.</option>
-          <option [ngValue]="100">100 / pág.</option>
-        </select>
-      </div>
-    </div>
-
-    @if (loading) {
-      <div class="empty">Carregando...</div>
-    }
-    @if (!loading && totalFiltrados === 0) {
-      <div class="empty">Nenhum produto encontrado.</div>
-    }
-
-    @if (!loading && totalFiltrados > 0) {
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Código</th>
-            <th>Descrição</th>
-            <th>Tipo</th>
-            <th>Unidade</th>
-            <th>Família</th>
-            <th>Preço Venda</th>
-            <th>Custo</th>
-            <th>Status</th>
-            <th>Ações</th>
+  @if (!loading && filtrados.length > 0) {
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Descrição</th>
+          <th>Tipo</th>
+          <th>Unidade</th>
+          <th>Família</th>
+          <th>Preço Venda</th>
+          <th>Status</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (p of paginados; track p.id) {
+          <tr [class.linha-inativa]="!p.ativo">
+            <td><strong>{{ p.codigo }}</strong></td>
+            <td>
+              <strong>{{ p.descricao }}</strong>
+              @if (p.descricaoComplementar) {
+                <div class="desc-complementar">{{ p.descricaoComplementar }}</div>
+              }
+            </td>
+            <td>
+              <span class="badge" [ngClass]="p.tipo === 4 ? 'badge-purple' : 'badge-gray'">
+                {{ tipoLabel(p.tipo) }}
+              </span>
+            </td>
+            <td>{{ p.unidadeMedidaSigla || '—' }}</td>
+            <td>{{ p.familiaProdutoNome || '—' }}</td>
+            <td>{{ p.precoVendaPadrao | currency:'BRL' }}</td>
+            <td>
+              <span class="badge" [ngClass]="p.ativo ? 'badge-green' : 'badge-red'">
+                {{ p.ativo ? 'Ativo' : 'Inativo' }}
+              </span>
+            </td>
+            <td class="actions">
+              <button class="btn btn-sm btn-secondary" (click)="editar(p)">Editar</button>
+              <button
+                class="btn btn-sm"
+                [ngClass]="p.ativo ? 'btn-warn' : 'btn-success'"
+                (click)="alternarAtivo(p)"
+              >
+                {{ p.ativo ? 'Desativar' : 'Ativar' }}
+              </button>
+              <button class="btn btn-sm btn-danger" (click)="excluir(p)">Excluir</button>
+            </td>
           </tr>
-        </thead>
-        <tbody>
-          @for (p of paginados; track p) {
-            <tr [class.linha-inativa]="!p.ativo">
-              <td><strong>{{ p.codigo }}</strong></td>
-              <td>{{ p.descricao }}</td>
-              <td>
-                <span class="badge" [ngClass]="p.tipo === 4 ? 'badge-purple' : 'badge-gray'">
-                  {{ tipoLabel(p.tipo) }}
-                </span>
-              </td>
-              <td>{{ p.unidadeMedidaSigla || '—' }}</td>
-              <td>{{ p.familiaProdutoNome || '—' }}</td>
-              <td>{{ p.precoVendaPadrao | currency:'BRL' }}</td>
-              <td>
-                @if (p.tipo === 4) {
-                  <div class="custo-kit">
-                    <strong>{{ p.custoCalculado | currency:'BRL' }}</strong>
-                    <small>
-                      mat. {{ p.custoMateriais | currency:'BRL' }} +
-                      proc. {{ p.custoProcessos | currency:'BRL' }}
-                    </small>
-                    @if (p.margemPercentual !== null && p.margemPercentual !== undefined) {
-                      <small
-                        [ngClass]="(p.margemPercentual || 0) >= 0 ? 'margem-ok' : 'margem-ruim'">
-                        margem {{ p.margemPercentual | number:'1.0-2' }}%
-                      </small>
-                    }
-                  </div>
-                } @else {
-                  {{ p.precoCustoMedio | currency:'BRL' }}
-                }
-              </td>
-              <td>
-                <span class="badge" [ngClass]="p.ativo ? 'badge-green' : 'badge-red'">
-                  {{ p.ativo ? 'Ativo' : 'Inativo' }}
-                </span>
-              </td>
-              <td class="actions">
-                <button class="btn btn-sm" [ngClass]="p.ativo ? 'btn-warn' : 'btn-success'"
-                  (click)="alternarAtivo(p)"
-                  [title]="p.ativo ? 'Desativar produto' : 'Ativar produto'">
-                  {{ p.ativo ? '🚫 Desativar' : '✅ Ativar' }}
-                </button>
-                <button class="btn btn-sm btn-secondary" (click)="editar(p)">Editar</button>
-                <button class="btn btn-sm btn-danger" (click)="excluir(p)">Excluir</button>
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    }
+        }
+      </tbody>
+    </table>
+  }
 
-    @if (!loading && totalPaginas > 1) {
-      <div class="paginacao">
-        <button class="btn btn-sm btn-secondary" [disabled]="pagina <= 1" (click)="irPagina(pagina - 1)">‹ Anterior</button>
-        <span>Página {{ pagina }} de {{ totalPaginas }}</span>
-        <button class="btn btn-sm btn-secondary" [disabled]="pagina >= totalPaginas" (click)="irPagina(pagina + 1)">Próxima ›</button>
-      </div>
-    }
-  </div>
+  @if (!loading && totalPaginas > 1) {
+    <div class="paginacao">
+      <button class="btn btn-sm btn-secondary" [disabled]="pagina <= 1" (click)="irPagina(pagina - 1)">‹ Anterior</button>
+      <span>Página {{ pagina }} de {{ totalPaginas }}</span>
+      <button class="btn btn-sm btn-secondary" [disabled]="pagina >= totalPaginas" (click)="irPagina(pagina + 1)">Próxima ›</button>
+    </div>
+  }
+</div>

@@ -1,18 +1,9 @@
 /* Estilos globais cobrem a maior parte deste componente. */
 
-.aviso-kit {
-  margin-top: 1rem;
-  font-size: .85rem;
-  color: #4a3a72;
-  background: #f2eefb;
-  border-left: 3px solid #8e6fd0;
-  padding: .65rem .9rem;
-  border-radius: 6px;
+.desc-complementar {
+  font-size: .78rem;
+  color: #6b7b8c;
+  margin-top: 2px;
 }
-
-.custo-kit { display: flex; flex-direction: column; line-height: 1.25; }
-.custo-kit small { color: #6b7b8c; font-size: .72rem; }
-.margem-ok { color: #1e7e34; font-weight: 600; }
-.margem-ruim { color: #c0392b; font-weight: 600; }
 
 .linha-inativa td { opacity: .55; }

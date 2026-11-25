@@ -98,9 +98,13 @@ export class ApiService {
   // Cadastros de apoio
   getUnidadesMedida(): Observable<UnidadeMedida[]> { return this.http.get<UnidadeMedida[]>(`${API}/unidades-medida`); }
   createUnidadeMedida(dto: any): Observable<UnidadeMedida> { return this.http.post<UnidadeMedida>(`${API}/unidades-medida`, dto); }
+  updateUnidadeMedida(id: string, dto: any): Observable<void> { return this.http.put<void>(`${API}/unidades-medida/${id}`, dto); }
+  deleteUnidadeMedida(id: string): Observable<void> { return this.http.delete<void>(`${API}/unidades-medida/${id}`); }
 
   getFamiliasProduto(): Observable<FamiliaProduto[]> { return this.http.get<FamiliaProduto[]>(`${API}/familias-produto`); }
   createFamiliaProduto(dto: any): Observable<FamiliaProduto> { return this.http.post<FamiliaProduto>(`${API}/familias-produto`, dto); }
+  updateFamiliaProduto(id: string, dto: any): Observable<void> { return this.http.put<void>(`${API}/familias-produto/${id}`, dto); }
+  deleteFamiliaProduto(id: string): Observable<void> { return this.http.delete<void>(`${API}/familias-produto/${id}`); }
 
   getArmazens(): Observable<Armazem[]> { return this.http.get<Armazem[]>(`${API}/armazens`); }
   createArmazem(dto: any): Observable<Armazem> { return this.http.post<Armazem>(`${API}/armazens`, dto); }
