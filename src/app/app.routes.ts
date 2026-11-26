@@ -69,16 +69,59 @@ export const routes: Routes = [
     loadComponent: () => import('./features/produtos/produto-form.component').then(m => m.ProdutoFormComponent)
   },
   {
-    path: 'processos',
+    path: 'roteiro',
     canActivate: guard,
-    data: { menu: 'processos' },
-    loadComponent: () => import('./features/processos/processos.component').then(m => m.ProcessosComponent)
+    data: { menu: 'roteiro' },
+    loadComponent: () => import('./features/roteiro/roteiros.component').then(m => m.RoteirosComponent)
   },
+  {
+    path: 'roteiro/novo',
+    canActivate: guard,
+    data: { menu: 'roteiro' },
+    loadComponent: () => import('./features/roteiro/roteiro-form.component').then(m => m.RoteiroFormComponent)
+  },
+  {
+    path: 'roteiro/recursos',
+    canActivate: guard,
+    data: { menu: 'roteiro' },
+    loadComponent: () => import('./features/roteiro/recursos.component').then(m => m.RecursosComponent)
+  },
+  {
+    path: 'roteiro/recursos/novo',
+    canActivate: guard,
+    data: { menu: 'roteiro' },
+    loadComponent: () => import('./features/roteiro/recurso-form.component').then(m => m.RecursoFormComponent)
+  },
+  {
+    path: 'roteiro/recursos/:id/editar',
+    canActivate: guard,
+    data: { menu: 'roteiro' },
+    loadComponent: () => import('./features/roteiro/recurso-form.component').then(m => m.RecursoFormComponent)
+  },
+  {
+    path: 'roteiro/:id/editar',
+    canActivate: guard,
+    data: { menu: 'roteiro' },
+    loadComponent: () => import('./features/roteiro/roteiro-form.component').then(m => m.RoteiroFormComponent)
+  },
+  { path: 'processos', redirectTo: 'roteiro', pathMatch: 'full' },
   {
     path: 'bom',
     canActivate: guard,
     data: { menu: 'bom' },
     loadComponent: () => import('./features/bom/bom.component').then(m => m.BomComponent)
+  },
+  {
+    path: 'bom/novo',
+    canActivate: guard,
+    data: { menu: 'bom' },
+    loadComponent: () => import('./features/bom/bom-form.component').then(m => m.BomFormComponent)
+  },
+  {
+    path: 'bom/:id/editar',
+    canActivate: guard,
+    data: { menu: 'bom' },
+    loadComponent: () => import('./features/bom/bom-form.component').then(m => m.BomFormComponent)
   },
   {
     path: 'gestao-estoque',

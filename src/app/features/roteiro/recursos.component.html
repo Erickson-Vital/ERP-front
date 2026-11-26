@@ -1,0 +1,119 @@
+<!-- 1º CARD: FILTROS DE PESQUISA E BOTÕES DE AÇÃO -->
+<div class="card">
+  <div class="card-header">
+    <h2>🔍 Filtros de Pesquisa — Recursos</h2>
+    <button class="btn" (click)="novoRecurso()">+ Adicionar Novo Recurso</button>
+  </div>
+
+  <div class="form-grid">
+    <div class="form-group">
+      <label>Buscar (Código ou Nome do Recurso)</label>
+      <input
+        [(ngModel)]="filtroTexto"
+        (keyup.enter)="aplicarFiltro()"
+        placeholder="Digite para pesquisar..."
+      />
+    </div>
+
+    <div class="form-group">
+      <label>Tipo</label>
+      <select [(ngModel)]="filtroTipo">
+        <option value="">Todos os tipos</option>
+        @for (t of tiposRecurso; track t.id) {
+          <option [value]="t.id">{{ t.nome }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Status</label>
+      <select [(ngModel)]="filtroStatus">
+        <option value="">Todos</option>
+        <option value="0">Ativo</option>
+        <option value="1">Inativo</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="form-actions">
+    <button class="btn" (click)="aplicarFiltro()">🔍 Filtrar</button>
+    <button class="btn btn-secondary" (click)="limparFiltro()">Limpar Filtro</button>
+  </div>
+</div>
+
+<!-- 2º CARD: TABELA DE CONSULTA DE RECURSOS -->
+<div class="card">
+  <div class="card-header">
+    <h2>Recursos ({{ filtrados.length }})</h2>
+    <div class="filtros">
+      <select [(ngModel)]="tamanho" (ngModelChange)="onTamanhoChange()">
+        <option [ngValue]="10">10 / pág.</option>
+        <option [ngValue]="25">25 / pág.</option>
+        <option [ngValue]="50">50 / pág.</option>
+        <option [ngValue]="100">100 / pág.</option>
+      </select>
+    </div>
+  </div>
+
+  @if (error) {
+    <div class="alert alert-error">{{ error }}</div>
+  }
+
+  @if (loading) {
+    <div class="empty">Carregando...</div>
+  }
+  @if (!loading && filtrados.length === 0) {
+    <div class="empty">Nenhum recurso encontrado com os filtros aplicados.</div>
+  }
+
+  @if (!loading && filtrados.length > 0) {
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Nome</th>
+          <th>Tipo</th>
+          <th>Valor Hora</th>
+          <th>Status</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (r of paginados; track r.id) {
+          <tr [class.linha-inativa]="!r.ativo">
+            <td><strong>{{ r.codigo }}</strong></td>
+            <td><strong>{{ r.nome }}</strong></td>
+            <td>
+              <span class="badge badge-gray">{{ r.tipoRecursoNome }}</span>
+            </td>
+            <td><strong>{{ r.valorHora | currency:'BRL' }}</strong></td>
+            <td>
+              <span class="badge" [ngClass]="r.ativo ? 'badge-green' : 'badge-red'">
+                {{ r.ativo ? 'Ativo' : 'Inativo' }}
+              </span>
+            </td>
+            <td class="actions">
+              <button class="btn btn-sm btn-secondary" (click)="editar(r)">Editar</button>
+              <button
+                class="btn btn-sm"
+                [ngClass]="r.ativo ? 'btn-warn' : 'btn-success'"
+                (click)="alternarAtivo(r)"
+              >
+                {{ r.ativo ? 'Desativar' : 'Ativar' }}
+              </button>
+              <button class="btn btn-sm btn-danger" (click)="excluir(r)">Excluir</button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+
+  @if (!loading && totalPaginas > 1) {
+    <div class="paginacao">
+      <button class="btn btn-sm btn-secondary" [disabled]="pagina <= 1" (click)="irPagina(pagina - 1)">‹ Anterior</button>
+      <span>Página {{ pagina }} de {{ totalPaginas }}</span>
+      <button class="btn btn-sm btn-secondary" [disabled]="pagina >= totalPaginas" (click)="irPagina(pagina + 1)">Próxima ›</button>
+    </div>
+  }
+</div>

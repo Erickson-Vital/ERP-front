@@ -85,7 +85,6 @@
           <th>Tipo</th>
           <th>Unidade</th>
           <th>Família</th>
-          <th>Custo Total</th>
           <th>Preço Venda</th>
           <th>Status</th>
           <th>Ações</th>
@@ -108,12 +107,6 @@
             </td>
             <td>{{ p.unidadeMedidaSigla || '—' }}</td>
             <td>{{ p.familiaProdutoNome || '—' }}</td>
-            <td>
-              <strong>{{ (p.custoTotal ?? p.precoCustoMedio) | currency:'BRL' }}</strong>
-              @if (p.qtdComponentes > 0) {
-                <div class="desc-complementar">{{ p.qtdComponentes }} item(ns) na composição</div>
-              }
-            </td>
             <td>{{ p.precoVendaPadrao | currency:'BRL' }}</td>
             <td>
               <span class="badge" [ngClass]="p.ativo ? 'badge-green' : 'badge-red'">

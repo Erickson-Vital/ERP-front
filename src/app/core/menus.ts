@@ -1,10 +1,17 @@
 /** Definição dos menus do sistema (alinhada com Erp.Domain.Common.Menus no backend). */
+export interface SubMenuItem {
+  label: string;
+  route: string;
+  icon: string;
+}
+
 export interface MenuItem {
   codigo: string;
   label: string;
   route: string;
   icon: string;
   grupo: string;
+  filhos?: SubMenuItem[];
 }
 
 export const MENUS: MenuItem[] = [
@@ -13,8 +20,17 @@ export const MENUS: MenuItem[] = [
   { codigo: 'clientes', label: 'Clientes', route: '/clientes', icon: '👥', grupo: 'Cadastros' },
   { codigo: 'fornecedores', label: 'Fornecedores', route: '/fornecedores', icon: '🏭', grupo: 'Cadastros' },
   { codigo: 'produtos', label: 'Produtos', route: '/produtos', icon: '📦', grupo: 'Cadastros' },
-  { codigo: 'processos', label: 'Processos', route: '/processos', icon: '⚙️', grupo: 'Cadastros' },
-  { codigo: 'bom', label: 'BOM (Estrutura de Kits)', route: '/bom', icon: '🧩', grupo: 'Cadastros' },
+  {
+    codigo: 'roteiro',
+    label: 'Roteiro',
+    route: '/roteiro',
+    icon: '⚙️',
+    grupo: 'Cadastros',
+    filhos: [
+      { label: 'Recurso', route: '/roteiro/recursos', icon: '🔧' }
+    ]
+  },
+  { codigo: 'bom', label: 'BOM', route: '/bom', icon: '🧩', grupo: 'Cadastros' },
 
   { codigo: 'gestao-estoque', label: 'Gestão do Estoque', route: '/gestao-estoque', icon: '🏭', grupo: 'Operação' },
   { codigo: 'estoque', label: 'Estoque', route: '/estoque', icon: '🏬', grupo: 'Operação' },

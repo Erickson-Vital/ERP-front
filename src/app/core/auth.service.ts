@@ -45,6 +45,7 @@ export class AuthService {
   temAcesso(menu: string): boolean {
     if (!this.sessao) return false;
     if (this.sessao.isAdmin) return true;
+    if (menu === 'roteiro' && this.sessao.menus.indexOf('processos') >= 0) return true;
     return this.sessao.menus.indexOf(menu) >= 0;
   }
 }

@@ -7,8 +7,9 @@ import {
   EstoqueProduto, MovimentacaoCreate, MovimentacaoEstoque,
   PedidoVenda, PedidoVendaCreate, PedidoCompra, PedidoCompraCreate, ItemPedido,
   Sessao, Usuario, UsuarioCreate, UsuarioUpdate, Auditoria, VerificacaoEstoque,
-  Processo, ProcessoCreate, ProdutoComposicao, ProdutoProcesso, ComposicaoKit,
-  BomResumo, KitOpcao, PaginaResult, EstoqueEmergencia, DefinirEmergencia,
+  Processo, ProcessoCreate, Bom, BomCreate,
+  Recurso, RecursoCreate, Roteiro, RoteiroCreate,
+  PaginaResult, EstoqueEmergencia, DefinirEmergencia,
   ContaBancaria, ContaBancariaCreate, ContaFinanceira, ContaFinanceiraCreate,
   BaixaCreate, Cobranca, CobrancaCreate, Conciliacao, ConciliacaoCreate, Dashboard
 } from './models';
@@ -65,29 +66,34 @@ export class ApiService {
   }
 
   // ---------- BOM (Bill of Materials) ----------
-  getBom(): Observable<BomResumo[]> { return this.http.get<BomResumo[]>(`${API}/bom`); }
-  getKits(): Observable<KitOpcao[]> { return this.http.get<KitOpcao[]>(`${API}/bom/kits`); }
-  getBomDetalhe(produtoId: string): Observable<ComposicaoKit> {
-    return this.http.get<ComposicaoKit>(`${API}/bom/${produtoId}`);
+  getBoms(): Observable<Bom[]> { return this.http.get<Bom[]>(`${API}/bom`); }
+  getBom(id: string): Observable<Bom> { return this.http.get<Bom>(`${API}/bom/${id}`); }
+  createBom(dto: BomCreate): Observable<Bom> { return this.http.post<Bom>(`${API}/bom`, dto); }
+  updateBom(id: string, dto: BomCreate): Observable<void> { return this.http.put<void>(`${API}/bom/${id}`, dto); }
+  alterarStatusBom(id: string, ativo: boolean): Observable<void> {
+    return this.http.patch<void>(`${API}/bom/${id}/status`, { ativo });
   }
-  addComponente(produtoId: string, dto: { componenteId: string; quantidade: number }): Observable<ProdutoComposicao> {
-    return this.http.post<ProdutoComposicao>(`${API}/bom/${produtoId}/componentes`, dto);
+  deleteBom(id: string): Observable<void> { return this.http.delete<void>(`${API}/bom/${id}`); }
+
+  // ---------- Recursos (Sub-menu de Roteiro) ----------
+  getRecursos(): Observable<Recurso[]> { return this.http.get<Recurso[]>(`${API}/recursos`); }
+  getRecurso(id: string): Observable<Recurso> { return this.http.get<Recurso>(`${API}/recursos/${id}`); }
+  createRecurso(dto: RecursoCreate): Observable<Recurso> { return this.http.post<Recurso>(`${API}/recursos`, dto); }
+  updateRecurso(id: string, dto: RecursoCreate): Observable<void> { return this.http.put<void>(`${API}/recursos/${id}`, dto); }
+  alterarStatusRecurso(id: string, ativo: boolean): Observable<void> {
+    return this.http.patch<void>(`${API}/recursos/${id}/status`, { ativo });
   }
-  updateComponente(produtoId: string, composicaoId: string, dto: { componenteId: string; quantidade: number }): Observable<void> {
-    return this.http.put<void>(`${API}/bom/${produtoId}/componentes/${composicaoId}`, dto);
+  deleteRecurso(id: string): Observable<void> { return this.http.delete<void>(`${API}/recursos/${id}`); }
+
+  // ---------- Roteiros ----------
+  getRoteiros(): Observable<Roteiro[]> { return this.http.get<Roteiro[]>(`${API}/roteiros`); }
+  getRoteiro(id: string): Observable<Roteiro> { return this.http.get<Roteiro>(`${API}/roteiros/${id}`); }
+  createRoteiro(dto: RoteiroCreate): Observable<Roteiro> { return this.http.post<Roteiro>(`${API}/roteiros`, dto); }
+  updateRoteiro(id: string, dto: RoteiroCreate): Observable<void> { return this.http.put<void>(`${API}/roteiros/${id}`, dto); }
+  alterarStatusRoteiro(id: string, ativo: boolean): Observable<void> {
+    return this.http.patch<void>(`${API}/roteiros/${id}/status`, { ativo });
   }
-  removeComponente(produtoId: string, composicaoId: string): Observable<void> {
-    return this.http.delete<void>(`${API}/bom/${produtoId}/componentes/${composicaoId}`);
-  }
-  addProcessoKit(produtoId: string, dto: { processoId: string; horas: number }): Observable<ProdutoProcesso> {
-    return this.http.post<ProdutoProcesso>(`${API}/bom/${produtoId}/processos`, dto);
-  }
-  updateProcessoKit(produtoId: string, produtoProcessoId: string, dto: { processoId: string; horas: number }): Observable<void> {
-    return this.http.put<void>(`${API}/bom/${produtoId}/processos/${produtoProcessoId}`, dto);
-  }
-  removeProcessoKit(produtoId: string, produtoProcessoId: string): Observable<void> {
-    return this.http.delete<void>(`${API}/bom/${produtoId}/processos/${produtoProcessoId}`);
-  }
+  deleteRoteiro(id: string): Observable<void> { return this.http.delete<void>(`${API}/roteiros/${id}`); }
 
   // Processos produtivos
   getProcessos(): Observable<Processo[]> { return this.http.get<Processo[]>(`${API}/processos`); }
