@@ -12,16 +12,56 @@
         <span class="brand-text">ERP</span>
       </div>
       <nav>
-        @for (g of grupos; track g) {
+        @for (g of grupos; track g.nome) {
           <div class="nav-grupo">{{ g.nome }}</div>
-          @for (item of g.itens; track item) {
-            <a
-              [routerLink]="item.route"
-              routerLinkActive="active"
-              class="nav-item">
-              <span class="icon">{{ item.icon }}</span>
-              <span>{{ item.label }}</span>
-            </a>
+          @for (item of g.itens; track item.codigo) {
+            @if (item.filhos?.length) {
+              <div class="nav-item-wrapper">
+                <a
+                  [routerLink]="item.route"
+                  [class.active]="itemPaiAtivo(item)"
+                  (click)="submenusAbertos[item.codigo] = true"
+                  class="nav-item nav-item-has-sub"
+                >
+                  <span class="nav-item-left">
+                    <span class="icon">{{ item.icon }}</span>
+                    <span>{{ item.label }}</span>
+                  </span>
+                  <button
+                    type="button"
+                    class="btn-submenu-toggle"
+                    (click)="alternarSubmenu(item.codigo, $event)"
+                    title="Expandir / Recolher sub-menu"
+                  >
+                    {{ submenuEstaAberto(item.codigo) ? '▾' : '▸' }}
+                  </button>
+                </a>
+
+                @if (submenuEstaAberto(item.codigo)) {
+                  <div class="nav-sublista">
+                    @for (sub of item.filhos; track sub.route) {
+                      <a
+                        [routerLink]="sub.route"
+                        routerLinkActive="active"
+                        class="nav-subitem"
+                      >
+                        <span class="sub-icon">{{ sub.icon }}</span>
+                        <span>{{ sub.label }}</span>
+                      </a>
+                    }
+                  </div>
+                }
+              </div>
+            } @else {
+              <a
+                [routerLink]="item.route"
+                routerLinkActive="active"
+                class="nav-item"
+              >
+                <span class="icon">{{ item.icon }}</span>
+                <span>{{ item.label }}</span>
+              </a>
+            }
           }
         }
       </nav>

@@ -1,0 +1,24 @@
+.header-btns {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.seq-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 26px;
+  padding: 0 8px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.linha-inativa td {
+  opacity: 0.55;
+}

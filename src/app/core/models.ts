@@ -236,10 +236,7 @@ export interface Produto {
   unidadeVendaNome?: string;
   origemAbastecimentoId?: string;
   origemAbastecimentoNome?: string;
-  prazoFabricacaoDias: number;
-  rendimento: number;
   percentualPerda: number;
-  permiteUsoEmBom: boolean;
   ativo: boolean;
   unidadeMedidaId: string;
   unidadeMedidaSigla?: string;
@@ -252,25 +249,6 @@ export interface Produto {
   qtdComponentes: number;
   qtdProcessos: number;
   margemPercentual?: number | null;
-  custoComponentes?: number;
-  custoTotal?: number;
-  itensComposicao?: ProdutoComposicaoItem[];
-}
-
-export interface ProdutoComposicaoItem {
-  componenteId: string;
-  codigo: string;
-  codigoBarras?: string;
-  descricao: string;
-  unidadeMedidaSigla?: string;
-  quantidade: number;
-  valorCustoReferencia: number;
-  subtotal: number;
-}
-
-export interface ProdutoComposicaoInput {
-  componenteId: string;
-  quantidade: number;
 }
 
 export interface ProdutoCreate {
@@ -291,14 +269,10 @@ export interface ProdutoCreate {
   precoMinimo: number;
   unidadeVendaId?: string | null;
   origemAbastecimentoId?: string | null;
-  prazoFabricacaoDias: number;
-  rendimento: number;
   percentualPerda: number;
-  permiteUsoEmBom: boolean;
   ativo: boolean;
   unidadeMedidaId: string | null;
   familiaProdutoId: string | null;
-  itensComposicao?: ProdutoComposicaoInput[];
 }
 
 export interface UnidadeMedida {
@@ -376,25 +350,107 @@ export interface PaginaResult<T> {
   temProxima: boolean;
 }
 
-/** Resumo de um kit na tela de BOM. */
-export interface BomResumo {
-  produtoId: string;
-  codigo: string;
-  descricao: string;
-  precoVenda: number;
-  qtdComponentes: number;
-  qtdProcessos: number;
-  custoMateriais: number;
-  custoProcessos: number;
-  custoTotal: number;
-  margemPercentual?: number | null;
+/** Estrutura BOM cadastrada (cabeçalho + itens filhos). */
+export interface Bom {
+  id: string;
+  produtoPaiId: string;
+  produtoPaiCodigo: string;
+  produtoPaiDescricao: string;
+  unidadeMedidaBomId: string;
+  unidadeMedidaBomNome: string;
+  ativo: boolean;
+  qtdFilhos: number;
+  precoTotalBom: number;
+  dataCadastro: string;
+  itens: BomItem[];
 }
 
-export interface KitOpcao {
+export interface BomItem {
+  id?: string;
+  produtoFilhoId: string;
+  produtoFilhoCodigo: string;
+  produtoFilhoDescricao: string;
+  produtoFilhoUnidade?: string;
+  quantidade: number;
+  precoUnitario: number;
+  precoTotal: number;
+  percentualPerda: number;
+  quantidadePerda: number;
+}
+
+export interface BomItemInput {
+  produtoFilhoId: string;
+  quantidade: number;
+}
+
+export interface BomCreate {
+  produtoPaiId: string | null;
+  unidadeMedidaBomId: string | null;
+  ativo: boolean;
+  itens: BomItemInput[];
+}
+
+/** Recurso produtivo (sub-menu de Roteiro). */
+export interface Recurso {
   id: string;
   codigo: string;
-  descricao: string;
-  precoVenda: number;
+  nome: string;
+  valorHora: number;
+  tipoRecursoId: string;
+  tipoRecursoNome: string;
+  ativo: boolean;
+  dataCadastro: string;
+}
+
+export interface RecursoCreate {
+  codigo: string;
+  nome: string;
+  valorHora: number;
+  tipoRecursoId: string | null;
+  ativo: boolean;
+}
+
+/** Roteiro de produção. */
+export interface Roteiro {
+  id: string;
+  produtoId: string;
+  produtoCodigo: string;
+  produtoDescricao: string;
+  unidadeMedidaRoteiroId: string;
+  unidadeMedidaRoteiroNome: string;
+  ativo: boolean;
+  qtdRecursos: number;
+  totalHoras: number;
+  totalMaoDeObra: number;
+  custoTotal: number;
+  dataCadastro: string;
+  itens: RoteiroItem[];
+}
+
+export interface RoteiroItem {
+  id?: string;
+  ordem: number;
+  recursoId: string;
+  recursoCodigo: string;
+  recursoNome: string;
+  tipoRecursoNome?: string;
+  valorHora: number;
+  horas: number;
+  quantidadeMaoDeObra: number;
+  custoTotal: number;
+}
+
+export interface RoteiroItemInput {
+  recursoId: string;
+  horas: number;
+  quantidadeMaoDeObra: number;
+}
+
+export interface RoteiroCreate {
+  produtoId: string | null;
+  unidadeMedidaRoteiroId: string | null;
+  ativo: boolean;
+  itens: RoteiroItemInput[];
 }
 
 export interface MovimentacaoCreate {

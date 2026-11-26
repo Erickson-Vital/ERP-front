@@ -1,0 +1,325 @@
+<div class="card">
+  <div class="card-header">
+    <div>
+      <h2>{{ bomId ? 'Editar BOM' : 'Nova BOM' }}</h2>
+      <p class="subtitulo">
+        Escolha a unidade de medida da BOM, pesquise o Produto Pai e vincule os Produtos Filhos com suas quantidades.
+      </p>
+    </div>
+    <button type="button" class="btn btn-secondary" (click)="voltar()">← Voltar para a Lista</button>
+  </div>
+
+  @if (error) {
+    <div class="alert alert-error">{{ error }}</div>
+  }
+  @if (sucesso) {
+    <div class="alert alert-success">{{ sucesso }}</div>
+  }
+
+  @if (loading) {
+    <div class="empty">Carregando dados da BOM...</div>
+  } @else {
+    <!-- ======================================================= -->
+    <!-- 1. CABEÇALHO DA BOM: UNIDADE DE MEDIDA + PRODUTO PAI    -->
+    <!-- ======================================================= -->
+    <div class="secao-box">
+      <h3 class="secao-titulo">1. Dados Principais da BOM</h3>
+
+      <div class="form-grid grid-topo-bom">
+        <!-- Unidade de Medida da BOM (com engrenagem) -->
+        <div class="form-group">
+          <label>Unidade de Medida da BOM *</label>
+          <div class="select-with-gear">
+            <select [(ngModel)]="unidadeMedidaBomId">
+              <option [ngValue]="null">Selecione...</option>
+              @for (u of unidadesBom; track u.id) {
+                <option [ngValue]="u.id">{{ u.nome }}</option>
+              }
+            </select>
+            <button
+              type="button"
+              class="btn-gear"
+              title="Gerenciar Unidades de Medida da BOM"
+              (click)="abrirModalUnidadesBom()"
+            >
+              ⚙️
+            </button>
+          </div>
+        </div>
+
+        <!-- Produto Pai (Busca dinâmica por código ou nome) -->
+        <div class="form-group span-2 autocomplete-wrapper">
+          <label>Produto Pai * (digite o código ou nome do produto)</label>
+          <div class="input-clear-row">
+            <input
+              [(ngModel)]="buscaPaiTermo"
+              (focus)="mostrarDropdownPai = true"
+              (input)="onDigitarProdutoPai()"
+              (blur)="fecharDropdownPaiComDelay()"
+              placeholder="Ex.: PA-001 ou Lateral Armário..."
+              autocomplete="off"
+            />
+            @if (produtoPaiSelecionado) {
+              <button
+                type="button"
+                class="btn btn-sm btn-secondary"
+                title="Trocar Produto Pai"
+                (click)="limparProdutoPai()"
+              >
+                Trocar
+              </button>
+            }
+          </div>
+
+          @if (mostrarDropdownPai) {
+            <div class="autocomplete-dropdown">
+              @if (opcoesProdutoPai.length === 0) {
+                <div class="autocomplete-empty">Nenhum produto encontrado para "{{ buscaPaiTermo }}".</div>
+              } @else {
+                @for (p of opcoesProdutoPai; track p.id) {
+                  <div class="autocomplete-item" (mousedown)="selecionarProdutoPai(p)">
+                    <div>
+                      <strong>{{ p.codigo }}</strong> — {{ p.descricao }}
+                    </div>
+                    <span class="badge badge-gray">{{ p.unidadeMedidaSigla || 'UN' }}</span>
+                  </div>
+                }
+              }
+            </div>
+          }
+
+          @if (produtoPaiSelecionado) {
+            <div class="pai-selecionado-tag">
+              ✅ Produto Pai selecionado: <strong>{{ produtoPaiSelecionado.codigo }} — {{ produtoPaiSelecionado.descricao }}</strong>
+            </div>
+          }
+        </div>
+
+        <!-- Status Ativo -->
+        <div class="form-group checkbox">
+          <input type="checkbox" id="bomAtiva" [(ngModel)]="ativo" />
+          <label for="bomAtiva">BOM Ativa</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================= -->
+    <!-- 2. VINCULAR PRODUTOS FILHOS                             -->
+    <!-- ======================================================= -->
+    <div class="secao-box">
+      <h3 class="secao-titulo">2. Produtos Filhos Necessários</h3>
+
+      @if (!produtoPaiId) {
+        <div class="aviso-selecao-pai">
+          👆 Selecione primeiro o <strong>Produto Pai</strong> acima para habilitar a inclusão dos Produtos Filhos.
+        </div>
+      } @else {
+        <!-- Barra de busca e inclusão de Produto Filho -->
+        <div class="painel-adicionar-filho">
+          <div class="linha-busca-filho">
+            <div class="form-group flex-2 autocomplete-wrapper">
+              <label>Pesquisar Produto Filho (Código ou Nome)</label>
+              <input
+                [(ngModel)]="buscaFilhoTermo"
+                (focus)="mostrarDropdownFilho = true"
+                (input)="onDigitarProdutoFilho()"
+                (blur)="fecharDropdownFilhoComDelay()"
+                placeholder="Digite o código ou nome do produto filho..."
+                autocomplete="off"
+              />
+
+              @if (mostrarDropdownFilho) {
+                <div class="autocomplete-dropdown">
+                  @if (opcoesProdutoFilho.length === 0) {
+                    <div class="autocomplete-empty">Nenhum produto disponível para "{{ buscaFilhoTermo }}".</div>
+                  } @else {
+                    @for (pf of opcoesProdutoFilho; track pf.id) {
+                      <div class="autocomplete-item" (mousedown)="selecionarProdutoFilho(pf)">
+                        <div>
+                          <strong>{{ pf.codigo }}</strong> — {{ pf.descricao }}
+                          <span class="sub-info-dropdown">
+                            | Preço Unit.: {{ pf.precoCustoMedio | currency:'BRL' }} | Perda: {{ pf.percentualPerda | number:'1.2-2' }}%
+                          </span>
+                        </div>
+                        <span class="badge badge-gray">{{ pf.unidadeMedidaSigla || 'UN' }}</span>
+                      </div>
+                    }
+                  }
+                </div>
+              }
+            </div>
+
+            <div class="form-group qtd-filho-group">
+              <label>Quantidade Necessária</label>
+              <input
+                type="number"
+                min="0.0001"
+                step="any"
+                [(ngModel)]="novaQtdFilho"
+                (keyup.enter)="adicionarFilho()"
+                placeholder="1"
+              />
+            </div>
+
+            <div class="acao-add-filho">
+              <button type="button" class="btn" (click)="adicionarFilho()">
+                + Adicionar Filho
+              </button>
+            </div>
+          </div>
+
+          <!-- Pré-visualização imediata ao selecionar o Produto Filho -->
+          @if (produtoFilhoEmSelecao) {
+            <div class="preview-filho-bar">
+              <span>
+                <strong>Preço Unitário:</strong> {{ previewPrecoUnitarioFilho | currency:'BRL' }}
+              </span>
+              <span>
+                <strong>Preço Total (Qtd × Unit.):</strong> {{ previewPrecoTotalFilho | currency:'BRL' }}
+              </span>
+              <span>
+                <strong>% de Perda:</strong> {{ previewPercentualPerdaFilho | number:'1.2-2' }}%
+              </span>
+              <span>
+                <strong>Quantidade de Perca:</strong> {{ previewQtdPerdaFilho | number:'1.0-4' }} {{ produtoFilhoEmSelecao.unidadeMedidaSigla || '' }}
+              </span>
+            </div>
+          }
+        </div>
+
+        <!-- Tabela dos Produtos Filhos inseridos -->
+        @if (itens.length === 0) {
+          <div class="empty">
+            Nenhum Produto Filho vinculado ainda. Pesquise acima e clique em <strong>+ Adicionar Filho</strong>.
+          </div>
+        } @else {
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Produto Filho</th>
+                <th>Quantidade</th>
+                <th>Preço Unitário</th>
+                <th>Preço Total (Qtd × Preço Unit.)</th>
+                <th>% de Perda</th>
+                <th>Quantidade de Perca</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of itens; track item.produtoFilhoId; let i = $index) {
+                <tr>
+                  <td><strong>{{ item.produtoFilhoCodigo }}</strong></td>
+                  <td>
+                    <strong>{{ item.produtoFilhoDescricao }}</strong>
+                    @if (item.produtoFilhoUnidade) {
+                      <span class="badge badge-gray" style="margin-left: 6px;">{{ item.produtoFilhoUnidade }}</span>
+                    }
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      class="input-qtd-item"
+                      min="0.0001"
+                      step="any"
+                      [(ngModel)]="item.quantidade"
+                      (ngModelChange)="recalcularItem(item)"
+                    />
+                  </td>
+                  <td>{{ item.precoUnitario | currency:'BRL' }}</td>
+                  <td><strong>{{ item.precoTotal | currency:'BRL' }}</strong></td>
+                  <td>{{ item.percentualPerda | number:'1.2-2' }}%</td>
+                  <td>
+                    {{ item.quantidadePerda | number:'1.0-4' }}
+                    @if (item.produtoFilhoUnidade) {
+                      <span class="unid-perda">{{ item.produtoFilhoUnidade }}</span>
+                    }
+                  </td>
+                  <td class="actions">
+                    <button type="button" class="btn btn-sm btn-danger" (click)="removerItem(i)">
+                      Remover
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+            <tfoot>
+              <tr class="tfoot-bom">
+                <td colspan="4" style="text-align: right;">Preço Total da BOM:</td>
+                <td class="valor-total-bom">{{ precoTotalGeral | currency:'BRL' }}</td>
+                <td colspan="3"></td>
+              </tr>
+            </tfoot>
+          </table>
+        }
+      }
+    </div>
+
+    <!-- RODAPÉ DE AÇÕES -->
+    <div class="form-actions footer-actions">
+      <button type="button" class="btn" [disabled]="salvando" (click)="salvar()">
+        💾 {{ salvando ? 'Salvando...' : (bomId ? 'Atualizar BOM' : 'Salvar BOM') }}
+      </button>
+      <button type="button" class="btn btn-secondary" [disabled]="salvando" (click)="voltar()">
+        Cancelar
+      </button>
+    </div>
+  }
+</div>
+
+<!-- =================================================================== -->
+<!-- POP-UP (MODAL) DA ENGRENAGEM — UNIDADES DE MEDIDA DA BOM            -->
+<!-- =================================================================== -->
+@if (modalUnidadeAberto) {
+  <div class="modal-backdrop" (click)="fecharModalUnidadesBom()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>⚙️ Gerenciar Unidades de Medida da BOM</h3>
+        <button type="button" class="btn-close" (click)="fecharModalUnidadesBom()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="nova-opcao-row">
+          <input
+            [(ngModel)]="novaUnidadeTexto"
+            (keyup.enter)="adicionarUnidadeBom()"
+            placeholder="Ex.: UN, CJ, KIT, CX..."
+          />
+          <button type="button" class="btn btn-sm" (click)="adicionarUnidadeBom()">+ Adicionar</button>
+        </div>
+
+        @if (unidadesBom.length === 0) {
+          <div class="empty-modal">Nenhuma unidade cadastrada.</div>
+        } @else {
+          <ul class="lista-opcoes">
+            @for (u of unidadesBom; track u.id; let i = $index) {
+              <li class="opcao-item">
+                @if (editandoIndex === i) {
+                  <input
+                    class="input-edicao"
+                    [(ngModel)]="editandoTexto"
+                    (keyup.enter)="salvarEdicaoUnidade(i)"
+                  />
+                  <div class="opcao-acoes">
+                    <button type="button" class="btn btn-sm btn-success" (click)="salvarEdicaoUnidade(i)">Salvar</button>
+                    <button type="button" class="btn btn-sm btn-secondary" (click)="cancelarEdicaoUnidade()">Cancelar</button>
+                  </div>
+                } @else {
+                  <span class="opcao-nome">{{ u.nome }}</span>
+                  <div class="opcao-acoes">
+                    <button type="button" class="btn btn-sm btn-secondary" (click)="iniciarEdicaoUnidade(i)">Editar</button>
+                    <button type="button" class="btn btn-sm btn-danger" (click)="removerUnidadeBom(i)">Excluir</button>
+                  </div>
+                }
+              </li>
+            }
+          </ul>
+        }
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="fecharModalUnidadesBom()">Fechar</button>
+      </div>
+    </div>
+  </div>
+}

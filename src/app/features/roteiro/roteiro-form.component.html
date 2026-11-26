@@ -1,0 +1,346 @@
+<div class="card">
+  <div class="card-header">
+    <div>
+      <h2>{{ roteiroId ? 'Editar Roteiro' : 'Novo Roteiro' }}</h2>
+      <p class="subtitulo">
+        Escolha a unidade de medida, selecione o produto desejado e insira os recursos com horas e quantidade de mão de obra.
+      </p>
+    </div>
+    <button type="button" class="btn btn-secondary" (click)="voltar()">← Voltar para a Lista</button>
+  </div>
+
+  @if (error) {
+    <div class="alert alert-error">{{ error }}</div>
+  }
+  @if (sucesso) {
+    <div class="alert alert-success">{{ sucesso }}</div>
+  }
+
+  @if (loading) {
+    <div class="empty">Carregando dados do roteiro...</div>
+  } @else {
+    <!-- ======================================================= -->
+    <!-- 1. CABEÇALHO DO ROTEIRO: UNIDADE E PRODUTO              -->
+    <!-- ======================================================= -->
+    <div class="secao-box">
+      <h3 class="secao-titulo">1. Dados Principais do Roteiro</h3>
+
+      <div class="form-grid grid-topo-roteiro">
+        <!-- Unidade de Medida do Roteiro (com engrenagem) -->
+        <div class="form-group">
+          <label>Unidade de Medida *</label>
+          <div class="select-with-gear">
+            <select [(ngModel)]="unidadeMedidaRoteiroId">
+              <option [ngValue]="null">Selecione...</option>
+              @for (u of unidadesRoteiro; track u.id) {
+                <option [ngValue]="u.id">{{ u.nome }}</option>
+              }
+            </select>
+            <button
+              type="button"
+              class="btn-gear"
+              title="Gerenciar Unidades de Medida do Roteiro"
+              (click)="abrirModalUnidades()"
+            >
+              ⚙️
+            </button>
+          </div>
+        </div>
+
+        <!-- Produto Desejado (Busca dinâmica por código ou nome) -->
+        <div class="form-group span-2 autocomplete-wrapper">
+          <label>Produto * (digite o código ou nome do produto)</label>
+          <div class="input-clear-row">
+            <input
+              [(ngModel)]="buscaProdutoTermo"
+              (focus)="mostrarDropdownProduto = true"
+              (input)="onDigitarProduto()"
+              (blur)="fecharDropdownProdutoComDelay()"
+              placeholder="Ex.: PA-001 ou Lateral Armário..."
+              autocomplete="off"
+            />
+            @if (produtoSelecionado) {
+              <button
+                type="button"
+                class="btn btn-sm btn-secondary"
+                title="Trocar Produto"
+                (click)="limparProduto()"
+              >
+                Trocar
+              </button>
+            }
+          </div>
+
+          @if (mostrarDropdownProduto) {
+            <div class="autocomplete-dropdown">
+              @if (opcoesProduto.length === 0) {
+                <div class="autocomplete-empty">Nenhum produto encontrado para "{{ buscaProdutoTermo }}".</div>
+              } @else {
+                @for (p of opcoesProduto; track p.id) {
+                  <div class="autocomplete-item" (mousedown)="selecionarProduto(p)">
+                    <div>
+                      <strong>{{ p.codigo }}</strong> — {{ p.descricao }}
+                    </div>
+                    <span class="badge badge-gray">{{ p.unidadeMedidaSigla || 'UN' }}</span>
+                  </div>
+                }
+              }
+            </div>
+          }
+
+          @if (produtoSelecionado) {
+            <div class="produto-selecionado-tag">
+              ✅ Produto selecionado: <strong>{{ produtoSelecionado.codigo }} — {{ produtoSelecionado.descricao }}</strong>
+            </div>
+          }
+        </div>
+
+        <!-- Status Ativo -->
+        <div class="form-group checkbox">
+          <input type="checkbox" id="roteiroAtivo" [(ngModel)]="ativo" />
+          <label for="roteiroAtivo">Roteiro Ativo</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================= -->
+    <!-- 2. VINCULAR RECURSOS, HORAS E MÃO DE OBRA               -->
+    <!-- ======================================================= -->
+    <div class="secao-box">
+      <h3 class="secao-titulo">2. Recursos e Operações do Roteiro</h3>
+
+      @if (!produtoId) {
+        <div class="aviso-selecao-produto">
+          👆 Selecione primeiro o <strong>Produto</strong> acima para inserir os recursos e horas do roteiro.
+        </div>
+      } @else {
+        <!-- Painel de seleção de Recurso + Horas + Mão de Obra -->
+        <div class="painel-adicionar-recurso">
+          <div class="linha-busca-recurso">
+            <div class="form-group flex-2 autocomplete-wrapper">
+              <label>Pesquisar Recurso (Código, Nome ou Tipo)</label>
+              <input
+                [(ngModel)]="buscaRecursoTermo"
+                (focus)="mostrarDropdownRecurso = true"
+                (input)="onDigitarRecurso()"
+                (blur)="fecharDropdownRecursoComDelay()"
+                placeholder="Digite o código ou nome do recurso..."
+                autocomplete="off"
+              />
+
+              @if (mostrarDropdownRecurso) {
+                <div class="autocomplete-dropdown">
+                  @if (opcoesRecurso.length === 0) {
+                    <div class="autocomplete-empty">
+                      Nenhum recurso encontrado. Cadastre recursos no sub-menu <strong>Recurso</strong>.
+                    </div>
+                  } @else {
+                    @for (rec of opcoesRecurso; track rec.id) {
+                      <div class="autocomplete-item" (mousedown)="selecionarRecurso(rec)">
+                        <div>
+                          <strong>{{ rec.codigo }}</strong> — {{ rec.nome }}
+                          <span class="sub-info-dropdown">
+                            | Valor Hora: {{ rec.valorHora | currency:'BRL' }}
+                          </span>
+                        </div>
+                        <span class="badge badge-gray">{{ rec.tipoRecursoNome }}</span>
+                      </div>
+                    }
+                  }
+                </div>
+              }
+            </div>
+
+            <div class="form-group campo-curto">
+              <label>Quantidade de Horas</label>
+              <input
+                type="number"
+                min="0.01"
+                step="0.01"
+                [(ngModel)]="novasHoras"
+                (keyup.enter)="adicionarRecurso()"
+                placeholder="1,00"
+              />
+            </div>
+
+            <div class="form-group campo-curto">
+              <label>Qtd. Mão de Obra</label>
+              <input
+                type="number"
+                min="0"
+                step="1"
+                [(ngModel)]="novaQtdMaoDeObra"
+                (keyup.enter)="adicionarRecurso()"
+                placeholder="1"
+              />
+            </div>
+
+            <div class="acao-add-recurso">
+              <button type="button" class="btn" (click)="adicionarRecurso()">
+                + Adicionar Recurso
+              </button>
+            </div>
+          </div>
+
+          <!-- Pré-visualização imediata ao selecionar o Recurso -->
+          @if (recursoEmSelecao) {
+            <div class="preview-recurso-bar">
+              <span>
+                <strong>Tipo:</strong> {{ recursoEmSelecao.tipoRecursoNome }}
+              </span>
+              <span>
+                <strong>Valor Hora:</strong> {{ previewValorHora | currency:'BRL' }}
+              </span>
+              <span>
+                <strong>Total de Custo (Horas × Valor Hora):</strong> {{ previewCustoTotal | currency:'BRL' }}
+              </span>
+              <span>
+                <strong>Mão de Obra:</strong> {{ novaQtdMaoDeObra }}
+              </span>
+            </div>
+          }
+        </div>
+
+        <!-- Tabela dos Recursos inseridos (com sequência 1, 2, 3...) -->
+        @if (itens.length === 0) {
+          <div class="empty">
+            Nenhum recurso inserido neste roteiro ainda. Selecione um recurso acima e clique em <strong>+ Adicionar Recurso</strong>.
+          </div>
+        } @else {
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Seq.</th>
+                <th>Código</th>
+                <th>Recurso</th>
+                <th>Valor Hora</th>
+                <th>Quantidade de Horas</th>
+                <th>Qtd. Mão de Obra</th>
+                <th>Total de Custo</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of itens; track $index; let i = $index) {
+                <tr>
+                  <td>
+                    <span class="seq-badge">{{ item.ordem }}</span>
+                  </td>
+                  <td><strong>{{ item.recursoCodigo }}</strong></td>
+                  <td>
+                    <strong>{{ item.recursoNome }}</strong>
+                    @if (item.tipoRecursoNome) {
+                      <span class="badge badge-gray" style="margin-left: 6px;">{{ item.tipoRecursoNome }}</span>
+                    }
+                  </td>
+                  <td>{{ item.valorHora | currency:'BRL' }}</td>
+                  <td>
+                    <input
+                      type="number"
+                      class="input-tabela"
+                      min="0.01"
+                      step="0.01"
+                      [(ngModel)]="item.horas"
+                      (ngModelChange)="recalcularItem(item)"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      class="input-tabela"
+                      min="0"
+                      step="1"
+                      [(ngModel)]="item.quantidadeMaoDeObra"
+                    />
+                  </td>
+                  <td><strong>{{ item.custoTotal | currency:'BRL' }}</strong></td>
+                  <td class="actions">
+                    <button type="button" class="btn btn-sm btn-danger" (click)="removerItem(i)">
+                      Remover
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+            <tfoot>
+              <tr class="tfoot-roteiro">
+                <td colspan="4" style="text-align: right;">Totais do Roteiro:</td>
+                <td>{{ totalHorasGeral | number:'1.2-2' }} h</td>
+                <td>{{ totalMaoDeObraGeral }}</td>
+                <td class="valor-total-roteiro">{{ custoTotalGeral | currency:'BRL' }}</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        }
+      }
+    </div>
+
+    <!-- RODAPÉ DE AÇÕES -->
+    <div class="form-actions footer-actions">
+      <button type="button" class="btn" [disabled]="salvando" (click)="salvar()">
+        💾 {{ salvando ? 'Salvando...' : (roteiroId ? 'Atualizar Roteiro' : 'Salvar Roteiro') }}
+      </button>
+      <button type="button" class="btn btn-secondary" [disabled]="salvando" (click)="voltar()">
+        Cancelar
+      </button>
+    </div>
+  }
+</div>
+
+<!-- =================================================================== -->
+<!-- POP-UP (MODAL) DA ENGRENAGEM — UNIDADES DE MEDIDA DO ROTEIRO        -->
+<!-- =================================================================== -->
+@if (modalUnidadeAberto) {
+  <div class="modal-backdrop" (click)="fecharModalUnidades()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>⚙️ Gerenciar Unidades de Medida do Roteiro</h3>
+        <button type="button" class="btn-close" (click)="fecharModalUnidades()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="nova-opcao-row">
+          <input
+            [(ngModel)]="novaUnidadeTexto"
+            (keyup.enter)="adicionarUnidade()"
+            placeholder="Ex.: UN, CJ, LOTE, KIT..."
+          />
+          <button type="button" class="btn btn-sm" (click)="adicionarUnidade()">+ Adicionar</button>
+        </div>
+
+        @if (unidadesRoteiro.length === 0) {
+          <div class="empty-modal">Nenhuma unidade cadastrada.</div>
+        } @else {
+          <ul class="lista-opcoes">
+            @for (u of unidadesRoteiro; track u.id; let i = $index) {
+              <li class="opcao-item">
+                @if (editandoIndex === i) {
+                  <input
+                    class="input-edicao"
+                    [(ngModel)]="editandoTexto"
+                    (keyup.enter)="salvarEdicaoUnidade(i)"
+                  />
+                  <div class="opcao-acoes">
+                    <button type="button" class="btn btn-sm btn-success" (click)="salvarEdicaoUnidade(i)">Salvar</button>
+                    <button type="button" class="btn btn-sm btn-secondary" (click)="cancelarEdicaoUnidade()">Cancelar</button>
+                  </div>
+                } @else {
+                  <span class="opcao-nome">{{ u.nome }}</span>
+                  <div class="opcao-acoes">
+                    <button type="button" class="btn btn-sm btn-secondary" (click)="iniciarEdicaoUnidade(i)">Editar</button>
+                    <button type="button" class="btn btn-sm btn-danger" (click)="removerUnidade(i)">Excluir</button>
+                  </div>
+                }
+              </li>
+            }
+          </ul>
+        }
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="fecharModalUnidades()">Fechar</button>
+      </div>
+    </div>
+  </div>
+}
