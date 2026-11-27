@@ -20,6 +20,8 @@ export class AuditoriaComponent implements OnInit {
   error = '';
   filtroMenu = '';
   filtroTexto = '';
+  filtroDataInicio = '';
+  filtroDataFim = '';
   menus = MENUS;
 
   // Paginação
@@ -47,12 +49,43 @@ export class AuditoriaComponent implements OnInit {
 
   aplicarFiltro() {
     const t = (this.filtroTexto || '').toLowerCase();
+
+    // Limites de data (inputs type="date" entregam 'YYYY-MM-DD')
+    const inicio = this.filtroDataInicio ? this.inicioDoDia(this.filtroDataInicio) : null;
+    const fim = this.filtroDataFim ? this.fimDoDia(this.filtroDataFim) : null;
+
     this.filtrados = this.registros.filter(r => {
       if (this.filtroMenu && r.menu !== this.filtroMenu) return false;
+
+      if (inicio || fim) {
+        const d = new Date(r.data).getTime();
+        if (isNaN(d)) return false;
+        if (inicio !== null && d < inicio) return false;
+        if (fim !== null && d > fim) return false;
+      }
+
       if (!t) return true;
       return `${r.usuarioNome} ${r.usuarioLogin} ${r.acao} ${r.detalhes} ${r.entidade}`.toLowerCase().includes(t);
     });
     this.pagina = 1;
+  }
+
+  /** Início do dia (00:00:00.000) a partir de 'YYYY-MM-DD'. */
+  private inicioDoDia(iso: string): number {
+    const [a, m, d] = iso.split('-').map(Number);
+    return new Date(a, (m || 1) - 1, d || 1, 0, 0, 0, 0).getTime();
+  }
+
+  /** Fim do dia (23:59:59.999) a partir de 'YYYY-MM-DD'. */
+  private fimDoDia(iso: string): number {
+    const [a, m, d] = iso.split('-').map(Number);
+    return new Date(a, (m || 1) - 1, d || 1, 23, 59, 59, 999).getTime();
+  }
+
+  limparDatas() {
+    this.filtroDataInicio = '';
+    this.filtroDataFim = '';
+    this.aplicarFiltro();
   }
 
   onFiltro() { this.aplicarFiltro(); }

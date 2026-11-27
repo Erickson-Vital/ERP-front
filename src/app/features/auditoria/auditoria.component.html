@@ -18,6 +18,15 @@
       }
     </select>
     <input [(ngModel)]="filtroTexto" (ngModelChange)="onFiltro()" placeholder="Filtrar por usuário, ação..." style="flex:1; min-width:220px" />
+    <label class="filtro-data">De
+      <input type="date" [(ngModel)]="filtroDataInicio" (ngModelChange)="onFiltro()" />
+    </label>
+    <label class="filtro-data">Até
+      <input type="date" [(ngModel)]="filtroDataFim" (ngModelChange)="onFiltro()" />
+    </label>
+    @if (filtroDataInicio || filtroDataFim) {
+      <button class="btn btn-sm btn-secondary" (click)="limparDatas()">✕ Limpar datas</button>
+    }
     <select [(ngModel)]="tamanho" (ngModelChange)="onFiltro()">
       <option [ngValue]="15">15 / pág.</option>
       <option [ngValue]="30">30 / pág.</option>

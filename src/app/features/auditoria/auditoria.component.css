@@ -4,3 +4,20 @@
 .detalhes { font-size: 13px; color: #475569; max-width: 420px; }
 .ip { font-size: 12px; color: #94a3b8; font-family: monospace; }
 .count { font-size: 13px; color: #64748b; }
+
+.filtro-data {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #475569;
+  white-space: nowrap;
+}
+.filtro-data input[type="date"] {
+  padding: 7px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #1e293b;
+  background: #fff;
+}
